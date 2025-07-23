@@ -15,6 +15,7 @@ import {
   Search,
   MoreVertical
 } from 'lucide-react'
+import { Conversation } from '@prisma/client'
 
 interface SidebarProps {
   selectedConversation: string | null
@@ -31,7 +32,7 @@ export function Sidebar({
 }: SidebarProps) {
   const { user } = useUser()
   const [searchQuery, setSearchQuery] = useState('')
-  const [conversations, setConversations] = useState<any[]>([])
+  const [conversations, setConversations] = useState<Conversation[]>([])
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-800">

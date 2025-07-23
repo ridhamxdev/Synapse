@@ -4,291 +4,413 @@ const next = require('next')
 const { Server } = require('socket.io')
 const { PrismaClient } = require('@prisma/client')
 
-const app = next({ dev: process.env.NODE_ENV !== 'production' })
+const dev = process.env.NODE_ENV !== 'production'
+const hostname = '0.0.0.0'
+const port = process.env.PORT || 3000
+
+const app = next({ dev, hostname, port })
 const handle = app.getRequestHandler()
 const prisma = new PrismaClient()
 
 app.prepare().then(() => {
-  const server = createServer((req, res) => {
-    const parsedUrl = parse(req.url, true)
-    handle(req, res, parsedUrl)
-  })
+  const httpServer = createServer(async (req, res) => {
+    try {
+      // Enhanced request handling with better error checking
+      if (!req.url || typeof req.url !== 'string') {
+        console.error('❌ Invalid request URL:', req.url)
+        res.statusCode = 400
+        res.end('Bad Request')
+        return
+      }
 
-  const io = new Server(server, {
-    cors: {
-      origin: process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3000",
-      methods: ["GET", "POST"]
+      // Add CORS headers for API routes
+      if (req.url.startsWith('/api/')) {
+        res.setHeader('Access-Control-Allow-Origin', '*')
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        
+        if (req.method === 'OPTIONS') {
+          res.statusCode = 200
+          res.end()
+          return
+        }
+      }
+
+      const parsedUrl = parse(req.url, true)
+      await handle(req, res, parsedUrl)
+    } catch (err) {
+      console.error('❌ Error handling request:', req.url, err)
+      res.statusCode = 500
+      res.end('Internal server error')
     }
   })
 
-  // Store active users
+  // Enhanced error handling for upgrade requests
+  httpServer.on('upgrade', (request, socket, head) => {
+    try {
+      console.log('🔄 Handling upgrade request:', request.url)
+      
+      // Validate upgrade request
+      if (!request.url || typeof request.url !== 'string') {
+        console.error('❌ Invalid upgrade request URL:', request.url)
+        socket.destroy()
+        return
+      }
+
+      // Let Socket.io handle the upgrade
+      if (request.url.startsWith('/socket.io/')) {
+        // Socket.io will handle this
+        return
+      }
+
+      // Destroy other upgrade requests
+      socket.destroy()
+    } catch (error) {
+      console.error('❌ Error handling upgrade request:', error)
+      socket.destroy()
+    }
+  })
+
+  // Enhanced Socket.io configuration with better error handling
+  const io = new Server(httpServer, {
+    cors: {
+      origin: [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://192.168.137.1:3000",
+        "http://192.168.0.104:3000",
+      ],
+      methods: ["GET", "POST"],
+      credentials: true
+    },
+    transports: ['websocket', 'polling'],
+    
+    // Conservative timeout settings
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    upgradeTimeout: 30000,
+    allowEIO3: true,
+    
+    // Enhanced error handling
+    allowRequest: (req, callback) => {
+      try {
+        // Validate request
+        if (!req.headers.origin) {
+          console.log('⚠️  No origin header, allowing request')
+          return callback(null, true)
+        }
+
+        const origin = req.headers.origin
+        const allowedOrigins = [
+          'http://localhost:3000',
+          'http://127.0.0.1:3000',
+          'http://192.168.137.1:3000',
+          'http://192.168.0.104:3000',
+        ]
+
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true)
+        } else {
+          console.log('⚠️  Unknown origin, allowing anyway:', origin)
+          callback(null, true) // Allow for development
+        }
+      } catch (error) {
+        console.error('❌ Error in allowRequest:', error)
+        callback(null, true) // Allow on error for development
+      }
+    }
+  })
+
+  // Store active users with heartbeat tracking
   const activeUsers = new Map()
+  const userHeartbeats = new Map()
+
+  // Global error handler for Socket.io
+  io.engine.on('connection_error', (err) => {
+    console.error('❌ Socket.io connection error:', err.req?.url, err.code, err.message)
+  })
 
   io.on('connection', (socket) => {
-    console.log('User connected:', socket.id)
+    console.log('🟢 New connection:', socket.id)
 
-    // User authentication
+    // Enhanced error handling for socket events
+    socket.on('error', (error) => {
+      console.error('❌ Socket error for', socket.id, ':', error)
+    })
+
+    // Authentication with better validation
     socket.on('authenticate', async (data) => {
       try {
-        const { userId } = data
+        // Validate authentication data
+        if (!data || typeof data !== 'object') {
+          socket.emit('auth-error', { message: 'Invalid authentication data' })
+          return
+        }
+
+        const { userId, userName, userImage } = data
+
+        if (!userId || typeof userId !== 'string') {
+          socket.emit('auth-error', { message: 'Invalid user ID' })
+          return
+        }
+
         socket.userId = userId
-        activeUsers.set(userId, socket.id)
-
-        // Update user online status
-        await prisma.user.update({
-          where: { id: userId },
-          data: { isOnline: true }
+        
+        // Store user info
+        activeUsers.set(userId, {
+          socketId: socket.id,
+          userName: userName || 'Unknown User',
+          userImage: userImage || null,
+          connectedAt: new Date()
         })
 
-        // Join user's conversations
-        const conversations = await prisma.conversationUser.findMany({
-          where: { userId },
-          include: { conversation: true }
+        userHeartbeats.set(userId, Date.now())
+
+        // Update user online status with error handling
+        try {
+          await prisma.user.update({
+            where: { clerkId: userId },
+            data: { 
+              isOnline: true,
+              lastSeen: new Date()
+            }
+          })
+        } catch (dbError) {
+          console.error('❌ Database error during authentication:', dbError)
+          // Don't fail authentication for DB errors
+        }
+
+        console.log(`✅ User authenticated: ${userName} (${userId})`)
+        
+        // Send online users to new user
+        const onlineUsers = Array.from(activeUsers.entries()).map(([id, info]) => ({
+          userId: id,
+          userName: info.userName,
+          userImage: info.userImage,
+          isOnline: true
+        }))
+        
+        socket.emit('online-users', onlineUsers)
+        socket.broadcast.emit('user-online', { 
+          userId, 
+          userName: userName || 'Unknown User', 
+          userImage 
         })
 
-        conversations.forEach(({ conversationId }) => {
-          socket.join(`conversation:${conversationId}`)
-        })
-
-        // Notify contacts of online status
-        socket.broadcast.emit('user-online', { userId })
       } catch (error) {
-        console.error('Authentication error:', error)
+        console.error('❌ Authentication error:', error)
+        socket.emit('auth-error', { message: 'Authentication failed' })
       }
     })
 
-    // Join conversation
+    // Join conversation with validation
     socket.on('join-conversation', async (conversationId) => {
-      socket.join(`conversation:${conversationId}`)
-      
-      // Mark messages as read
-      if (socket.userId) {
-        await prisma.messageRead.createMany({
-          data: {
-            messageId: { in: await getUnreadMessageIds(conversationId, socket.userId) },
-            userId: socket.userId
-          },
-          skipDuplicates: true
-        })
+      try {
+        if (!conversationId || typeof conversationId !== 'string') {
+          socket.emit('join-error', { error: 'Invalid conversation ID' })
+          return
+        }
+
+        socket.join(`conversation:${conversationId}`)
+        console.log(`👥 User ${socket.userId} joined conversation: ${conversationId}`)
+        
+        // Update heartbeat
+        if (socket.userId) {
+          userHeartbeats.set(socket.userId, Date.now())
+        }
+      } catch (error) {
+        console.error('❌ Error joining conversation:', error)
+        socket.emit('join-error', { error: 'Failed to join conversation' })
       }
     })
 
-    // Handle new messages
+    // Handle new messages with validation
     socket.on('send-message', async (data) => {
       try {
-        const { conversationId, content, type, fileUrl, fileName, replyToId } = data
+        if (!data || typeof data !== 'object') {
+          socket.emit('message-error', { error: 'Invalid message data' })
+          return
+        }
 
-        // Create message in database
+        const { conversationId, content, type = 'TEXT', fileUrl, fileName } = data
+
+        if (!conversationId || typeof conversationId !== 'string') {
+          socket.emit('message-error', { error: 'Invalid conversation ID' })
+          return
+        }
+
+        if (!socket.userId) {
+          socket.emit('message-error', { error: 'Not authenticated' })
+          return
+        }
+
+        // Update heartbeat
+        userHeartbeats.set(socket.userId, Date.now())
+
+        // Get sender from database with error handling
+        const sender = await prisma.user.findUnique({
+          where: { clerkId: socket.userId },
+          select: { id: true, name: true, imageUrl: true }
+        })
+
+        if (!sender) {
+          socket.emit('message-error', { error: 'User not found' })
+          return
+        }
+
+        // Create message with error handling
         const message = await prisma.message.create({
           data: {
-            content,
-            type: type || 'TEXT',
-            fileUrl,
-            fileName,
-            senderId: socket.userId,
+            content: content || null,
+            type,
+            fileUrl: fileUrl || null,
+            fileName: fileName || null,
+            senderId: sender.id,
             conversationId,
-            replyToId
           },
           include: {
             sender: {
-              select: {
-                id: true,
-                name: true,
-                imageUrl: true
-              }
-            },
-            replyTo: {
-              include: {
-                sender: {
-                  select: {
-                    id: true,
-                    name: true
-                  }
-                }
-              }
+              select: { id: true, name: true, imageUrl: true }
             }
           }
         })
 
-        // Update conversation last activity
-        await prisma.conversation.update({
-          where: { id: conversationId },
-          data: { updatedAt: new Date() }
-        })
+        console.log('💬 Message created:', message.id)
 
-        // Emit to conversation room
+        // Emit to conversation participants
         io.to(`conversation:${conversationId}`).emit('new-message', message)
 
-        // Send push notifications to offline users
-        const conversationUsers = await prisma.conversationUser.findMany({
-          where: { conversationId },
-          include: { user: true }
-        })
-
-        conversationUsers.forEach(({ user }) => {
-          if (!user.isOnline && user.id !== socket.userId) {
-            // Send push notification logic here
-            console.log(`Send notification to ${user.name}`)
-          }
-        })
-
       } catch (error) {
-        console.error('Message sending error:', error)
+        console.error('❌ Message error:', error)
         socket.emit('message-error', { error: 'Failed to send message' })
       }
     })
 
-    // Handle typing indicators
+    // Handle typing indicators with validation
     socket.on('typing', (data) => {
-      const { conversationId, isTyping } = data
-      socket.to(`conversation:${conversationId}`).emit('user-typing', {
-        userId: socket.userId,
-        isTyping
-      })
-    })
-
-    // Create new conversation
-    socket.on('create-conversation', async (data) => {
       try {
-        const { participantIds, type = 'DIRECT' } = data
+        if (!data || typeof data !== 'object') {
+          return
+        }
 
-        const conversation = await prisma.conversation.create({
-          data: {
-            type,
-            users: {
-              createMany: {
-                data: [
-                  { userId: socket.userId },
-                  ...participantIds.map(id => ({ userId: id }))
-                ]
-              }
-            }
-          },
-          include: {
-            users: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    imageUrl: true,
-                    isOnline: true
-                  }
-                }
-              }
-            }
-          }
+        const { conversationId, isTyping } = data
+        
+        if (!conversationId || typeof conversationId !== 'string') {
+          return
+        }
+        
+        // Update heartbeat
+        if (socket.userId) {
+          userHeartbeats.set(socket.userId, Date.now())
+        }
+        
+        socket.to(`conversation:${conversationId}`).emit('user-typing', {
+          userId: socket.userId,
+          isTyping: Boolean(isTyping)
         })
-
-        // Join all participants to the conversation room
-        const allParticipants = [socket.userId, ...participantIds]
-        allParticipants.forEach(userId => {
-          const userSocket = activeUsers.get(userId)
-          if (userSocket) {
-            io.sockets.sockets.get(userSocket)?.join(`conversation:${conversation.id}`)
-          }
-        })
-
-        // Emit new conversation to all participants
-        io.to(`conversation:${conversation.id}`).emit('new-conversation', conversation)
-
       } catch (error) {
-        console.error('Conversation creation error:', error)
-        socket.emit('conversation-error', { error: 'Failed to create conversation' })
+        console.error('❌ Typing error:', error)
       }
     })
 
-    // Create group
-    socket.on('create-group', async (data) => {
+    // Handle ping with validation
+    socket.on('ping', (data) => {
       try {
-        const { name, description, memberIds, imageUrl } = data
-
-        const group = await prisma.group.create({
-          data: {
-            name,
-            description,
-            imageUrl,
-            creatorId: socket.userId,
-            members: {
-              createMany: {
-                data: [
-                  { userId: socket.userId, role: 'ADMIN' },
-                  ...memberIds.map(id => ({ userId: id, role: 'MEMBER' }))
-                ]
-              }
-            }
-          },
-          include: {
-            members: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    imageUrl: true
-                  }
-                }
-              }
-            }
-          }
-        })
-
-        // Join all members to the group room
-        const allMembers = [socket.userId, ...memberIds]
-        allMembers.forEach(userId => {
-          const userSocket = activeUsers.get(userId)
-          if (userSocket) {
-            io.sockets.sockets.get(userSocket)?.join(`group:${group.id}`)
-          }
-        })
-
-        // Emit new group to all members
-        io.to(`group:${group.id}`).emit('new-group', group)
-
+        if (socket.userId) {
+          userHeartbeats.set(socket.userId, Date.now())
+        }
+        socket.emit('pong')
       } catch (error) {
-        console.error('Group creation error:', error)
-        socket.emit('group-error', { error: 'Failed to create group' })
+        console.error('❌ Ping error:', error)
       }
     })
 
-    // Handle disconnect
-    socket.on('disconnect', async () => {
-      console.log('User disconnected:', socket.id)
+    // Handle disconnect with cleanup
+    socket.on('disconnect', async (reason) => {
+      console.log('❌ User disconnected:', socket.id, 'Reason:', reason)
       
       if (socket.userId) {
         activeUsers.delete(socket.userId)
+        userHeartbeats.delete(socket.userId)
         
-        // Update user offline status
-        await prisma.user.update({
-          where: { id: socket.userId },
-          data: { 
-            isOnline: false,
-            lastSeen: new Date()
-          }
-        })
+        // Update user offline status with error handling
+        try {
+          await prisma.user.update({
+            where: { clerkId: socket.userId },
+            data: { 
+              isOnline: false,
+              lastSeen: new Date()
+            }
+          })
+        } catch (dbError) {
+          console.error('❌ Database error during disconnect:', dbError)
+        }
 
-        // Notify contacts of offline status
+        // Notify others of user going offline
         socket.broadcast.emit('user-offline', { userId: socket.userId })
       }
     })
   })
 
-  async function getUnreadMessageIds(conversationId, userId) {
-    const messages = await prisma.message.findMany({
-      where: {
-        conversationId,
-        senderId: { not: userId },
-        readBy: {
-          none: { userId }
-        }
-      },
-      select: { id: true }
-    })
-    return messages.map(m => m.id)
+  // Heartbeat cleanup
+  const heartbeatInterval = setInterval(() => {
+    const now = Date.now()
+    for (const [userId, lastHeartbeat] of userHeartbeats.entries()) {
+      if (now - lastHeartbeat > 300000) { // 5 minutes
+        console.log(`⚠️ Removing inactive user: ${userId}`)
+        activeUsers.delete(userId)
+        userHeartbeats.delete(userId)
+      }
+    }
+  }, 60000) // Clean up every minute
+
+  // Graceful shutdown
+  const gracefulShutdown = async (signal) => {
+    console.log(`🛑 ${signal} received, shutting down gracefully...`)
+    
+    clearInterval(heartbeatInterval)
+    
+    try {
+      // Notify all clients
+      io.emit('server-shutdown', { message: 'Server is shutting down' })
+      
+      // Close Socket.io
+      await new Promise((resolve) => {
+        io.close(resolve)
+      })
+      
+      // Close database connection
+      await prisma.$disconnect()
+      
+      // Close HTTP server
+      await new Promise((resolve) => {
+        httpServer.close(resolve)
+      })
+      
+      console.log('✅ Graceful shutdown completed')
+      process.exit(0)
+    } catch (error) {
+      console.error('❌ Error during shutdown:', error)
+      process.exit(1)
+    }
   }
 
-  server.listen(3000, (err) => {
-    if (err) throw err
-    console.log('> Ready on http://localhost:3000')
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'))
+  
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught Exception:', error)
+    gracefulShutdown('UNCAUGHT_EXCEPTION')
+  })
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason)
+  })
+
+  httpServer.listen(port, hostname, () => {
+    console.log(`🚀 Server ready on http://${hostname}:${port}`)
+    console.log(`🌐 Network access: http://192.168.137.1:${port}`)
+    console.log(`⚡ Socket.io server running with enhanced error handling`)
   })
 })

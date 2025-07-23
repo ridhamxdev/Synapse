@@ -38,26 +38,47 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Search users
+  // Search users with debouncing
   useEffect(() => {
-    if (searchQuery.trim()) {
-      searchUsers()
-    } else {
-      setUsers([])
-    }
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim()) {
+        searchUsers()
+      } else {
+        setUsers([])
+      }
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
   }, [searchQuery])
 
   const searchUsers = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`)
+      console.log('🔍 Searching for users:', searchQuery)
+      
+      const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+
+      console.log('📡 Search response status:', response.status)
+
       if (response.ok) {
         const data = await response.json()
-        setUsers(data.users)
+        console.log('👥 Found users:', data.users)
+        setUsers(data.users || [])
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Search error:', errorData)
+        toast.error('Failed to search users')
+        setUsers([])
       }
     } catch (error) {
-      console.error('Failed to search users:', error)
-      toast.error('Failed to search users')
+      console.error('🔴 Search request failed:', error)
+      toast.error('Network error while searching')
+      setUsers([])
     } finally {
       setLoading(false)
     }
@@ -65,37 +86,67 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
 
   const handleStartConversation = async (userId: string) => {
     try {
+      console.log('🚀 Starting conversation with user ID:', userId)
+      
+      // Fixed: Ensure clean API endpoint without extra characters
       const response = await fetch('/api/conversations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ participantId: userId })
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          participantId: userId 
+        })
       })
 
-      if (response.ok) {
-        const data = await response.json()
+      console.log('📡 Conversation API response:', response.status)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ API Error:', response.status, errorText)
+        
+        if (response.status === 404) {
+          toast.error('Conversation API not found. Please check server setup.')
+        } else if (response.status === 500) {
+          toast.error('Server error. Please try again.')
+        } else {
+          toast.error('Failed to start conversation')
+        }
+        return
+      }
+
+      const data = await response.json()
+      console.log('✅ Conversation created:', data)
+      
+      if (data.conversation && data.conversation.id) {
         onSelectConversation(data.conversation.id)
-        toast.success('Conversation started!')
+        toast.success(data.isNew ? 'New conversation started!' : 'Opened existing conversation!')
       } else {
-        toast.error('Failed to start conversation')
+        console.error('❌ Invalid conversation data:', data)
+        toast.error('Invalid response from server')
       }
     } catch (error) {
-      console.error('Failed to start conversation:', error)
-      toast.error('Failed to start conversation')
+      console.error('🔴 Conversation creation failed:', error)
+      toast.error('Network error. Please check your connection.')
     }
   }
 
   const formatLastSeen = (lastSeen: string) => {
-    const date = new Date(lastSeen)
-    const now = new Date()
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
-    
-    if (diffInHours < 1) {
-      return 'Last seen recently'
-    } else if (diffInHours < 24) {
-      return `Last seen ${diffInHours}h ago`
-    } else {
-      const diffInDays = Math.floor(diffInHours / 24)
-      return `Last seen ${diffInDays}d ago`
+    try {
+      const date = new Date(lastSeen)
+      const now = new Date()
+      const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+      
+      if (diffInHours < 1) {
+        return 'Last seen recently'
+      } else if (diffInHours < 24) {
+        return `Last seen ${diffInHours}h ago`
+      } else {
+        const diffInDays = Math.floor(diffInHours / 24)
+        return `Last seen ${diffInDays}d ago`
+      }
+    } catch (error) {
+      return 'Last seen unknown'
     }
   }
 
