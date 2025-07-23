@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String
+  imageUrl  String?  @db.VarChar(500)  // Changed from @db.Text
+  phone     String?
+  bio       String   @default("Hey there! I'm using WhatsApp Clone.") @db.VarChar(500)  // Fixed: VarChar allows defaults
+  isOnline  Boolean  @default(false)
+  lastSeen  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  sentMessages     Message[]           @relation("MessageSender")
+  conversations    ConversationUser[]
+  groupsCreated    Group[]            @relation("GroupCreator")
+  groupMembers     GroupMember[]
+  contacts         Contact[]          @relation("UserContacts")
+  contactOf        Contact[]          @relation("ContactUser")
+
+  @@map("users")
+}
+
+model Conversation {
+  id        String           @id @default(cuid())
+  type      ConversationType @default(DIRECT)
+  name      String?
+  imageUrl  String?          @db.VarChar(500)  // Changed from @db.Text
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  // Relationships
+  users     ConversationUser[]
+  messages  Message[]
+
+  @@map("conversations")
+}
+
+model ConversationUser {
+  id             String   @id @default(cuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime @default(now())
+  lastReadAt     DateTime @default(now())
+
+  // Relationships
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
+  @@map("conversation_users")
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.VarChar(1000)  // Changed from @db.Text
+  imageUrl    String?  @db.VarChar(500)   // Changed from @db.Text
+  creatorId   String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  creator  User           @relation("GroupCreator", fields: [creatorId], references: [id])
+  members  GroupMember[]
+  messages Message[]
+
+  @@index([creatorId])
+  @@map("groups")
+}
+
+model GroupMember {
+  id       String    @id @default(cuid())
+  groupId  String
+  userId   String
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
+
+  // Relationships
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+  @@map("group_members")
+}
+
+model Message {
+  id             String      @id @default(cuid())
+  content        String?     @db.VarChar(5000)  // Changed from @db.Text for better performance
+  type           MessageType @default(TEXT)
+  fileUrl        String?     @db.VarChar(500)   // Changed from @db.Text
+  fileName       String?
+  fileSize       Int?
+  senderId       String
+  conversationId String?
+  groupId        String?
+  replyToId      String?
+  isEdited       Boolean     @default(false)
+  isDeleted      Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relationships
+  sender       User          @relation("MessageSender", fields: [senderId], references: [id])
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  group        Group?        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  replyTo      Message?      @relation("MessageReply", fields: [replyToId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  replies      Message[]     @relation("MessageReply")
+  readBy       MessageRead[]
+
+  @@index([senderId])
+  @@index([conversationId])
+  @@index([groupId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+model MessageRead {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  // Relationships
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+  @@map("message_reads")
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  userId    String
+  contactId String
+  name      String?
+  createdAt DateTime @default(now())
+
+  // Relationships
+  user    User @relation("UserContacts", fields: [userId], references: [id], onDelete: Cascade)
+  contact User @relation("ContactUser", fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contactId])
+  @@index([userId])
+  @@index([contactId])
+  @@map("contacts")
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  AUDIO
+  VIDEO
+  DOCUMENT
+}
+
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
