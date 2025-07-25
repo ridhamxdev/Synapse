@@ -4,9 +4,31 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { MessageInput } from './MessageInput'
 import { MessageBubble } from './MessageBubble'
-import { Conversation, Message } from '@/types/chat'
 
-export function ChatWindow({ conversation, socket, isConnected }: { conversation: Conversation, socket: any, isConnected: boolean }) {
+interface Message {
+  id: string
+  content: string
+  type: 'TEXT' | 'IMAGE' | 'FILE'
+  senderId: string
+  conversationId: string
+  createdAt: string
+  fileUrl?: string
+  fileName?: string
+  replyToId?: string
+  sender: {
+    id: string
+    name: string
+    imageUrl?: string
+  }
+}
+
+interface ChatWindowProps {
+  conversation: any
+  socket: any
+  isConnected: boolean
+}
+
+export function ChatWindow({ conversation, socket, isConnected }: ChatWindowProps) {
   const { user } = useUser()
   const [messages, setMessages] = useState<Message[]>([])
   const [typingUsers, setTypingUsers] = useState<string[]>([])
@@ -14,45 +36,40 @@ export function ChatWindow({ conversation, socket, isConnected }: { conversation
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const handleNewMessage = useCallback((message: Message) => {
-    console.log('🔔 Received new message:', message.id, 'from:', message.senderId)
-    
     if (message.conversationId !== conversation?.id) {
-      console.log('Message not for current conversation, ignoring')
       return
     }
 
     if (message.senderId === user?.id) {
-      console.log('🚫 Ignoring own message from socket (handled optimistically)')
       return
     }
     
     setMessages(prev => {
       const exists = prev.some(m => m.id === message.id)
       if (exists) {
-        console.log('Message already exists, skipping')
         return prev
       }
-      console.log('✅ Adding new message from other user')
       return [...prev, message]
     })
   }, [conversation?.id, user?.id])
 
-  const addOptimisticMessage = useCallback((message: Message) => {
-    console.log('➕ Adding optimistic message:', message.id)
-    setMessages(prev => {
-      const exists = prev.some(m => m.id === message.id)
-      if (exists) return prev
-      return [...prev, message]
-    })
-  }, [])
+  const handleTyping = useCallback(({ userId, isTyping }: { userId: string, isTyping: boolean }) => {
+    if (userId === user?.id) return
 
-  const handleTypingEvent = useCallback(({ userId, isTyping }: { userId: string, isTyping: boolean }) => {
     setTypingUsers(prev => {
       if (isTyping) {
         return prev.includes(userId) ? prev : [...prev, userId]
       } else {
         return prev.filter(id => id !== userId)
       }
+    })
+  }, [user?.id])
+
+  const addOptimisticMessage = useCallback((message: Message) => {
+    setMessages(prev => {
+      const exists = prev.some(m => m.id === message.id)
+      if (exists) return prev
+      return [...prev, message]
     })
   }, [])
 
@@ -81,25 +98,22 @@ export function ChatWindow({ conversation, socket, isConnected }: { conversation
   useEffect(() => {
     if (!socket || !conversation?.id) return
 
-    console.log('Setting up socket listeners for conversation:', conversation.id)
-
     socket.emit('join-conversation', conversation.id)
     socket.on('message:new', handleNewMessage)
-    socket.on('user:typing', handleTypingEvent)
+    socket.on('user:typing', handleTyping)
 
     return () => {
-      console.log('Cleaning up socket listeners for conversation:', conversation.id)
       socket.off('message:new', handleNewMessage)
-      socket.off('user:typing', handleTypingEvent)
+      socket.off('user:typing', handleTyping)
       socket.emit('leave-conversation', conversation.id)
     }
-  }, [socket, conversation?.id, handleNewMessage, handleTypingEvent])
+  }, [socket, conversation?.id, handleNewMessage, handleTyping])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleTyping = (isTyping: boolean) => {
+  const handleTypingInput = (isTyping: boolean) => {
     if (!socket || !conversation) return
     
     socket.emit('typing', {
@@ -118,7 +132,6 @@ export function ChatWindow({ conversation, socket, isConnected }: { conversation
 
   return (
     <div className="flex flex-col h-full">
-      {/* Chat Header */}
       <div className="bg-white border-b px-4 py-3 flex items-center space-x-3">
         <img
           src={conversation.imageUrl || '/default-avatar.png'}
@@ -142,10 +155,9 @@ export function ChatWindow({ conversation, socket, isConnected }: { conversation
         />
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {isLoadingMessages ? (
-          <div className="flex justify-center">
+          <div className="flex justify-center items-center h-full">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
           </div>
         ) : (
@@ -153,10 +165,11 @@ export function ChatWindow({ conversation, socket, isConnected }: { conversation
             {messages.map((message) => (
               <MessageBubble
                 key={message.id}
-                message={message as any}
+                message={message}
                 isOwn={message.senderId === user?.id}
               />
             ))}
+            
             {typingUsers.length > 0 && (
               <div className="flex items-center space-x-2 text-gray-500 text-sm">
                 <div className="flex space-x-1">
@@ -167,6 +180,7 @@ export function ChatWindow({ conversation, socket, isConnected }: { conversation
                 <span>typing...</span>
               </div>
             )}
+            
             <div ref={messagesEndRef} />
           </>
         )}
@@ -175,7 +189,7 @@ export function ChatWindow({ conversation, socket, isConnected }: { conversation
       <MessageInput
         conversationId={conversation.id}
         socket={socket}
-        onTyping={handleTyping}
+        onTyping={handleTypingInput}
         onOptimisticMessage={addOptimisticMessage}
         disabled={!isConnected}
       />

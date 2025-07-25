@@ -1,3 +1,4 @@
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -16,10 +17,6 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'utfs.io',
-      },
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
       }
     ],
   },
@@ -68,39 +65,12 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
           { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
         ],
-      },
-      {
-        source: '/socket.io/:path*',
-        headers: [
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET, POST' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type' },
-        ],
-      }
-    ]
-  },
-
-  async rewrites() {
-    return [
-      {
-        source: '/socket.io/:path*',
-        destination: '/api/socket/:path*'
       }
     ]
   },
 
   transpilePackages: ['socket.io-client'],
-
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
-  },
-
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
-
   output: 'standalone',
-
   productionBrowserSourceMaps: false,
 }
 

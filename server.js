@@ -71,6 +71,7 @@ app.prepare().then(() => {
         "http://127.0.0.1:3000",
         "http://192.168.137.1:3000",
         "http://192.168.0.104:3000",
+        "http://0.0.0.0:3000"
       ],
       methods: ["GET", "POST"],
       credentials: true
@@ -93,6 +94,7 @@ app.prepare().then(() => {
           'http://127.0.0.1:3000',
           'http://192.168.137.1:3000',
           'http://192.168.0.104:3000',
+          'http://0.0.0.0:3000'
         ]
 
         if (allowedOrigins.includes(origin)) {
@@ -137,6 +139,7 @@ app.prepare().then(() => {
         }
 
         socket.userId = userId
+        socket.join(`user:${userId}`)
 
         activeUsers.set(userId, {
           socketId: socket.id,
@@ -231,28 +234,32 @@ app.prepare().then(() => {
 
         socket.to(`conversation:${conversationId}`).emit('message:new', data)
 
-        const conversation = await prisma.conversation.findUnique({
-          where: { id: conversationId },
-          include: {
-            users: { select: { userId: true } },
-            messages: {
-              orderBy: { createdAt: 'desc' },
-              take: 1,
-              include: { sender: { select: { name: true } } }
+        try {
+          const conversation = await prisma.conversation.findUnique({
+            where: { id: conversationId },
+            include: {
+              users: { select: { userId: true } },
+              messages: {
+                orderBy: { createdAt: 'desc' },
+                take: 1,
+                include: { sender: { select: { name: true } } }
+              }
             }
-          }
-        })
-
-        if (conversation) {
-          const updateData = {
-            id: conversation.id,
-            lastMessage: conversation.messages[0],
-            updatedAt: conversation.updatedAt
-          }
-
-          conversation.users.forEach(({ userId }) => {
-            socket.to(`user:${userId}`).emit('conversation:updated', updateData)
           })
+
+          if (conversation) {
+            const updateData = {
+              id: conversation.id,
+              lastMessage: conversation.messages[0],
+              updatedAt: conversation.updatedAt
+            }
+
+            conversation.users.forEach(({ userId }) => {
+              socket.to(`user:${userId}`).emit('conversation:updated', updateData)
+            })
+          }
+        } catch (dbError) {
+          console.error('Database error in message broadcast:', dbError)
         }
 
       } catch (error) {
@@ -378,7 +385,8 @@ app.prepare().then(() => {
     
     console.log('Server ready on http://localhost:' + port)
     console.log('Network access: http://192.168.137.1:' + port)
-    console.log('Socket.io server running')
+    console.log('Alternative access: http://0.0.0.0:' + port)
+    console.log('Socket.io server running with network support')
   })
 
 }).catch((err) => {
