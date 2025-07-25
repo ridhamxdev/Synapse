@@ -35,9 +35,8 @@ export default function ChatPage() {
       <div className="flex-1 flex flex-col">
         {activePanel === 'chat' && (
           <ChatWindow
-            conversationId={selectedConversation}
-            socket={socket}
-          />
+            conversation={selectedConversation}
+            socket={socket} isConnected={false}          />
         )}
         {activePanel === 'contacts' && (
           <ContactsPanel 
