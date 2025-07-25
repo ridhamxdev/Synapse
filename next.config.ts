@@ -1,14 +1,4 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Move allowedDevOrigins to root level (not under experimental)
-  allowedDevOrigins: [
-    'localhost:3000',
-    '127.0.0.1:3000',
-    '192.168.0.104:3000',
-    /^192\.168\.\d+\.\d+:3000$/,
-  ],
-
-  // Image domains for your WhatsApp clone
   images: {
     remotePatterns: [
       {
@@ -26,18 +16,27 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'utfs.io',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
       }
     ],
   },
 
-  // Webpack configuration for Socket.io compatibility
-  webpack: (config:any, { isServer }: { isServer: boolean }) => {
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
         net: false,
         tls: false,
+        child_process: false,
+        crypto: false,
+        os: false,
+        path: false,
+        stream: false,
+        util: false,
       }
     }
 
@@ -49,13 +48,60 @@ const nextConfig = {
     return config
   },
 
-  // Experimental features (keep separate)
   experimental: {
-    // Remove allowedDevOrigins from here
     serverActions: {
-      allowedOrigins: ['localhost:3000', '192.168.0.104:3000']
+      allowedOrigins: [
+        'localhost:3000',
+        '127.0.0.1:3000',
+        '192.168.137.1:3000',
+        '192.168.0.104:3000'
+      ]
     }
-  }
+  },
+
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+        ],
+      },
+      {
+        source: '/socket.io/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type' },
+        ],
+      }
+    ]
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: '/socket.io/:path*',
+        destination: '/api/socket/:path*'
+      }
+    ]
+  },
+
+  transpilePackages: ['socket.io-client'],
+
+  env: {
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
+  },
+
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+
+  output: 'standalone',
+
+  productionBrowserSourceMaps: false,
 }
 
 module.exports = nextConfig

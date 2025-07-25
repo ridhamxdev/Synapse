@@ -2,20 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(req: NextRequest) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const user = await currentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id: conversationId } = await params
     const { searchParams } = new URL(req.url)
-    const query = searchParams.get('q') || ''
-    const limit = parseInt(searchParams.get('limit') || '20')
-
-    if (!query.trim()) {
-      return NextResponse.json({ users: [] })
-    }
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const offset = (page - 1) * limit
 
     const currentDbUser = await prisma.user.findUnique({
       where: { clerkId: user.id }
@@ -25,76 +26,151 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const queryWords = query.toLowerCase().split(' ').filter(word => word.length > 0)
-    
-    const users = await prisma.user.findMany({
+    const conversationAccess = await prisma.conversationUser.findFirst({
       where: {
-        AND: [
-          { id: { not: currentDbUser.id } },
-          {
-            OR: [
-              { name: { contains: query } },
-              { email: { contains: query } },
-              { 
-                phone: query ? { 
-                  contains: query,
-                  not: null 
-                } : undefined 
-              },
-              ...queryWords.map(word => ({
-                name: { contains: word }
-              }))
-            ].filter(Boolean)
+        conversationId,
+        userId: currentDbUser.id
+      }
+    })
+
+    if (!conversationAccess) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
+    const messages = await prisma.message.findMany({
+      where: { conversationId },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            imageUrl: true
           }
-        ]
+        },
+        replyTo: {
+          include: {
+            sender: {
+              select: { name: true }
+            }
+          }
+        }
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        imageUrl: true,
-        bio: true,
-        isOnline: true,
-        lastSeen: true,
-        createdAt: true
-      },
-      orderBy: [
-        { isOnline: 'desc' },
-        { createdAt: 'desc' },
-        { name: 'asc' }
-      ],
-      take: Math.min(limit, 50)
+      orderBy: { createdAt: 'asc' },
+      skip: offset,
+      take: limit
     })
 
-    const scoredUsers = users.map(user => {
-      let score = 0
-      const lowerQuery = query.toLowerCase()
-      const lowerName = user.name.toLowerCase()
-      
-      if (lowerName === lowerQuery) score += 100
-      else if (lowerName.startsWith(lowerQuery)) score += 50
-      else if (lowerName.includes(lowerQuery)) score += 25
-      
-      if (user.email.toLowerCase().includes(lowerQuery)) score += 20
-      
-      if (user.isOnline) score += 10
-      
-      return { ...user, relevanceScore: score }
-    })
-    const sortedUsers = scoredUsers
-      .sort((a, b) => b.relevanceScore - a.relevanceScore)
-      .map(({ relevanceScore, ...user }) => user)
+    if (messages.length > 0) {
+      await prisma.messageRead.upsert({
+        where: {
+          messageId_userId: {
+            messageId: messages[messages.length - 1].id,
+            userId: currentDbUser.id
+          }
+        },
+        update: { readAt: new Date() },
+        create: {
+          messageId: messages[messages.length - 1].id,
+          userId: currentDbUser.id,
+          readAt: new Date()
+        }
+      })
+    }
 
-    return NextResponse.json({ 
-      users: sortedUsers,
-      total: sortedUsers.length,
-      query: query
+    return NextResponse.json({
+      messages,
+      pagination: {
+        page,
+        limit,
+        total: messages.length
+      }
     })
+
   } catch (error) {
-    console.error('User search error:', error)
-    return NextResponse.json({ 
+    console.error('Messages fetch error:', error)
+    return NextResponse.json({
       error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    }, { status: 500 })
+  }
+}
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await currentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id: conversationId } = await params
+    const body = await req.json()
+    const { content, type = 'TEXT', fileUrl, fileName, fileSize, replyToId } = body
+
+    const currentDbUser = await prisma.user.findUnique({
+      where: { clerkId: user.id }
+    })
+
+    if (!currentDbUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    const conversationAccess = await prisma.conversationUser.findFirst({
+      where: {
+        conversationId,
+        userId: currentDbUser.id
+      }
+    })
+
+    if (!conversationAccess) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
+    const message = await prisma.message.create({
+      data: {
+        content: content || '',
+        type,
+        conversationId,
+        senderId: currentDbUser.id,
+        fileUrl,
+        fileName,
+        fileSize: fileSize ? parseInt(fileSize) : null,
+        replyToId
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            imageUrl: true
+          }
+        },
+        replyTo: {
+          include: {
+            sender: {
+              select: { name: true }
+            }
+          }
+        }
+      }
+    })
+    
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { updatedAt: new Date() }
+    })
+
+    return NextResponse.json({
+      message,
+      success: true
+    })
+
+  } catch (error) {
+    console.error('Message creation error:', error)
+    return NextResponse.json({
+      error: 'Failed to send message',
       details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
     }, { status: 500 })
   }

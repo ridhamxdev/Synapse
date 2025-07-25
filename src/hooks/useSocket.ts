@@ -31,7 +31,7 @@ export const useSocket = () => {
     console.log('🔄 Creating new socket connection...')
 
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin
-    
+
     if (!socketUrl || typeof socketUrl !== 'string') {
       console.error('❌ Invalid socket URL:', socketUrl)
       setConnectionError('Invalid socket URL configuration')
@@ -50,15 +50,16 @@ export const useSocket = () => {
       reconnectionDelayMax: 5000,
       forceNew: true,
       autoConnect: true,
-      
+      auth: {
+        userId: user.id || '',
+        timestamp: Date.now().toString()
+      },
       query: {
         userId: user.id || '',
         timestamp: Date.now().toString()
       },
-      
       upgrade: true,
       rememberUpgrade: false,
-      
       closeOnBeforeunload: true
     })
 
@@ -67,7 +68,7 @@ export const useSocket = () => {
       setIsConnected(true)
       setConnectionError(null)
       isConnectingRef.current = false
-      
+
       const authData = {
         userId: user.id,
         userName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Anonymous',
@@ -95,7 +96,6 @@ export const useSocket = () => {
       console.log('❌ Socket disconnected:', reason)
       setIsConnected(false)
       isConnectingRef.current = false
-      
       if (reason !== 'io client disconnect') {
         setConnectionError(`Disconnected: ${reason}`)
       }
@@ -111,6 +111,7 @@ export const useSocket = () => {
       console.error('❌ Authentication error:', error)
       setConnectionError(`Auth failed: ${error.message}`)
     })
+
     keepAliveRef.current = setInterval(() => {
       if (socketInstance.connected) {
         socketInstance.emit('ping', { timestamp: Date.now() })
@@ -136,21 +137,19 @@ export const useSocket = () => {
       console.log('🧹 Cleaning up socket connection')
       cleanup()
       isConnectingRef.current = false
-      
       if (socketInstance) {
         socketInstance.removeAllListeners()
         socketInstance.disconnect()
       }
-      
       setSocket(null)
       setIsConnected(false)
       setConnectionError(null)
     }
   }, [user, createConnection, cleanup])
 
-  return { 
-    socket, 
-    isConnected, 
+  return {
+    socket,
+    isConnected,
     connectionError
   }
 }

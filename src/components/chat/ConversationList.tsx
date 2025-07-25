@@ -25,8 +25,6 @@ export function ConversationList({
 
   const fetchConversations = async () => {
     try {
-      console.log('📋 Fetching conversations...')
-      
       const response = await fetch('/api/conversations', {
         method: 'GET',
         headers: {
@@ -34,11 +32,8 @@ export function ConversationList({
         }
       })
 
-      console.log('📡 Conversations API response:', response.status)
-
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ Conversations loaded:', data.conversations?.length || 0)
         setConversations(data.conversations || [])
       } else {
         const errorData = await response.json()

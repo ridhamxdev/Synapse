@@ -53,8 +53,6 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
   const searchUsers = async () => {
     setLoading(true)
     try {
-      console.log('🔍 Searching for users:', searchQuery)
-      
       const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`, {
         method: 'GET',
         headers: {
@@ -62,11 +60,8 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
         }
       })
 
-      console.log('📡 Search response status:', response.status)
-
       if (response.ok) {
         const data = await response.json()
-        console.log('👥 Found users:', data.users)
         setUsers(data.users || [])
       } else {
         const errorData = await response.json()
@@ -85,8 +80,6 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
 
   const handleStartConversation = async (userId: string) => {
     try {
-      console.log('🚀 Starting conversation with user ID:', userId)
-      
       const response = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 
@@ -96,8 +89,6 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
           participantId: userId 
         })
       })
-
-      console.log('📡 Conversation API response:', response.status)
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -114,7 +105,6 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
       }
 
       const data = await response.json()
-      console.log('✅ Conversation created:', data)
       
       if (data.conversation && data.conversation.id) {
         onSelectConversation(data.conversation.id)

@@ -5,12 +5,16 @@ import { ChatApp } from '@/components/chat/ChatApp'
 
 export default async function ChatPage() {
   const user = await currentUser()
+
   if (!user) {
-    redirect('/')
+    redirect('/sign-in')
   }
+
   return (
     <ErrorBoundary>
-      <ChatApp />
+      <div className="h-screen bg-gray-100">
+        <ChatApp />
+      </div>
     </ErrorBoundary>
   )
 }
