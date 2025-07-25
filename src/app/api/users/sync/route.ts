@@ -8,14 +8,10 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { clerkId: user.id }
     })
-
     if (existingUser) {
-      // Update existing user info
       const updatedUser = await prisma.user.update({
         where: { clerkId: user.id },
         data: {
@@ -29,8 +25,6 @@ export async function POST(req: NextRequest) {
       })
       return NextResponse.json({ user: updatedUser })
     }
-
-    // Create new user
     const newUser = await prisma.user.create({
       data: {
         clerkId: user.id,
@@ -43,7 +37,6 @@ export async function POST(req: NextRequest) {
         lastSeen: new Date()
       }
     })
-
     return NextResponse.json({ user: newUser })
   } catch (error) {
     console.error('User sync error:', error)

@@ -9,7 +9,7 @@ import { ContactsPanel } from '@/components/chat/ContactsPanel'
 import { UserProfile } from '@/components/chat/UserProfile'
 
 export default function ChatPage() {
-  const { user, isLoaded } = useUserSync() // Use sync hook instead
+  const { user, isLoaded } = useUserSync()
   const socket = useSocket()
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [activePanel, setActivePanel] = useState<'chat' | 'contacts' | 'profile'>('chat')
@@ -24,7 +24,6 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Sidebar */}
       <div className="w-80 border-r border-gray-300 dark:border-gray-700 flex flex-col">
         <Sidebar
           selectedConversation={selectedConversation}
@@ -33,8 +32,6 @@ export default function ChatPage() {
           onPanelChange={setActivePanel}
         />
       </div>
-
-      {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {activePanel === 'chat' && (
           <ChatWindow

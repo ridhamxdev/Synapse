@@ -1,4 +1,3 @@
-// WhatsApp Clone Type Definitions
 
 export interface User {
     id: string

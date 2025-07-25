@@ -11,7 +11,7 @@ export const prisma = globalForPrisma.prisma ??
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
-// Graceful shutdown
+
 process.on('beforeExit', async () => {
   await prisma.$disconnect()
 })

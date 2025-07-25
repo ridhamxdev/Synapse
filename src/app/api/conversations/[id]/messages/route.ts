@@ -17,7 +17,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ users: [] })
     }
 
-    // Get current user's database record
     const currentDbUser = await prisma.user.findUnique({
       where: { clerkId: user.id }
     })
@@ -26,7 +25,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Split query into words for better matching
     const queryWords = query.toLowerCase().split(' ').filter(word => word.length > 0)
     
     const users = await prisma.user.findMany({
@@ -35,22 +33,18 @@ export async function GET(req: NextRequest) {
           { id: { not: currentDbUser.id } },
           {
             OR: [
-              // Exact name match
               { name: { contains: query } },
-              // Email match
               { email: { contains: query } },
-              // Phone match (if not null)
               { 
                 phone: query ? { 
                   contains: query,
                   not: null 
                 } : undefined 
               },
-              // Multi-word name search
               ...queryWords.map(word => ({
                 name: { contains: word }
               }))
-            ].filter(Boolean) // Remove undefined entries
+            ].filter(Boolean)
           }
         ]
       },
@@ -66,39 +60,31 @@ export async function GET(req: NextRequest) {
         createdAt: true
       },
       orderBy: [
-        { isOnline: 'desc' },     // Online users first
-        { createdAt: 'desc' },    // Newer users next
-        { name: 'asc' }           // Then alphabetically
+        { isOnline: 'desc' },
+        { createdAt: 'desc' },
+        { name: 'asc' }
       ],
-      take: Math.min(limit, 50) // Max 50 results
+      take: Math.min(limit, 50)
     })
 
-    // Add relevance scoring (optional)
     const scoredUsers = users.map(user => {
       let score = 0
       const lowerQuery = query.toLowerCase()
       const lowerName = user.name.toLowerCase()
       
-      // Exact name match gets highest score
       if (lowerName === lowerQuery) score += 100
-      // Name starts with query gets high score
       else if (lowerName.startsWith(lowerQuery)) score += 50
-      // Name contains query gets medium score
       else if (lowerName.includes(lowerQuery)) score += 25
       
-      // Email match gets points
       if (user.email.toLowerCase().includes(lowerQuery)) score += 20
       
-      // Online users get bonus points
       if (user.isOnline) score += 10
       
       return { ...user, relevanceScore: score }
     })
-
-    // Sort by relevance score
     const sortedUsers = scoredUsers
       .sort((a, b) => b.relevanceScore - a.relevanceScore)
-      .map(({ relevanceScore, ...user }) => user) // Remove score from response
+      .map(({ relevanceScore, ...user }) => user)
 
     return NextResponse.json({ 
       users: sortedUsers,

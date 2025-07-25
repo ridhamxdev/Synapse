@@ -30,7 +30,6 @@ export const useSocket = () => {
     setConnectionError(null)
     console.log('🔄 Creating new socket connection...')
 
-    // Validate URL before creating connection
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin
     
     if (!socketUrl || typeof socketUrl !== 'string') {
@@ -52,28 +51,23 @@ export const useSocket = () => {
       forceNew: true,
       autoConnect: true,
       
-      // Enhanced query validation
       query: {
         userId: user.id || '',
         timestamp: Date.now().toString()
       },
       
-      // Enhanced transport options
       upgrade: true,
       rememberUpgrade: false,
       
-      // Additional error handling options
       closeOnBeforeunload: true
     })
 
-    // Connection successful
     socketInstance.on('connect', () => {
       console.log('✅ Socket connected:', socketInstance.id)
       setIsConnected(true)
       setConnectionError(null)
       isConnectingRef.current = false
       
-      // Validate user data before sending
       const authData = {
         userId: user.id,
         userName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Anonymous',
@@ -81,7 +75,6 @@ export const useSocket = () => {
         timestamp: Date.now()
       }
 
-      // Validate auth data
       if (!authData.userId || typeof authData.userId !== 'string') {
         console.error('❌ Invalid user ID for authentication:', authData.userId)
         setConnectionError('Invalid user authentication data')
@@ -91,7 +84,6 @@ export const useSocket = () => {
       socketInstance.emit('authenticate', authData)
     })
 
-    // Connection failed
     socketInstance.on('connect_error', (error) => {
       console.error('🔴 Socket connection error:', error.message)
       setIsConnected(false)
@@ -99,7 +91,6 @@ export const useSocket = () => {
       isConnectingRef.current = false
     })
 
-    // Disconnection handling
     socketInstance.on('disconnect', (reason) => {
       console.log('❌ Socket disconnected:', reason)
       setIsConnected(false)
@@ -110,7 +101,6 @@ export const useSocket = () => {
       }
     })
 
-    // Enhanced error handling
     socketInstance.on('reconnect_failed', () => {
       console.error('🔴 Reconnection failed after all attempts')
       setConnectionError('Failed to reconnect to server')
@@ -121,8 +111,6 @@ export const useSocket = () => {
       console.error('❌ Authentication error:', error)
       setConnectionError(`Auth failed: ${error.message}`)
     })
-
-    // Set up keep-alive with validation
     keepAliveRef.current = setInterval(() => {
       if (socketInstance.connected) {
         socketInstance.emit('ping', { timestamp: Date.now() })

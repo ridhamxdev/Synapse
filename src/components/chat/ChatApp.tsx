@@ -14,7 +14,6 @@ export function ChatApp() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [activePanel, setActivePanel] = useState<'chat' | 'contacts' | 'profile'>('chat')
 
-  // Load user's conversations on mount
   useEffect(() => {
     if (isLoaded && user) {
       loadUserConversations()
@@ -23,7 +22,6 @@ export function ChatApp() {
 
   const loadUserConversations = async () => {
     try {
-      // FIXED: Correct endpoint
       const response = await fetch('/api/conversations')
       if (response.ok) {
         const data = await response.json()
@@ -50,7 +48,6 @@ export function ChatApp() {
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Sidebar */}
       <div className="w-80 border-r border-gray-300 dark:border-gray-700 flex flex-col">
         <Sidebar
           selectedConversation={selectedConversation}
@@ -60,7 +57,6 @@ export function ChatApp() {
         />
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {activePanel === 'chat' && (
           <ChatWindow

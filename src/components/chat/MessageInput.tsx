@@ -50,7 +50,6 @@ export function MessageInput({ conversationId, socket, onTyping }: MessageInputP
       setReplyTo(null)
       onTyping(false)
       
-      // Focus back to input
       inputRef.current?.focus()
       
     } catch (error) {
@@ -78,7 +77,6 @@ export function MessageInput({ conversationId, socket, onTyping }: MessageInputP
     setIsUploading(true)
     
     try {
-      // Create a simple file URL (in real app, upload to cloud storage)
       const fileUrl = URL.createObjectURL(file)
       
       const messageData = {
@@ -125,7 +123,6 @@ export function MessageInput({ conversationId, socket, onTyping }: MessageInputP
 
   return (
     <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-      {/* Reply Preview */}
       {replyTo && (
         <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
@@ -151,7 +148,6 @@ export function MessageInput({ conversationId, socket, onTyping }: MessageInputP
         </div>
       )}
 
-      {/* Emoji Picker */}
       {showEmojiPicker && (
         <div className="absolute bottom-16 right-4 z-50">
           <EmojiPicker
@@ -162,10 +158,8 @@ export function MessageInput({ conversationId, socket, onTyping }: MessageInputP
         </div>
       )}
 
-      {/* Input Area */}
       <div className="p-4">
         <div className="flex items-end space-x-2">
-          {/* Attachment Options */}
           <div className="flex space-x-1">
             <Button
               variant="ghost"
@@ -188,7 +182,6 @@ export function MessageInput({ conversationId, socket, onTyping }: MessageInputP
             </Button>
           </div>
 
-          {/* Message Input */}
           <div className="flex-1 relative">
             <Input
               ref={inputRef}
@@ -201,7 +194,6 @@ export function MessageInput({ conversationId, socket, onTyping }: MessageInputP
               autoComplete="off"
             />
             
-            {/* Emoji Button */}
             <Button
               variant="ghost"
               size="sm"
@@ -212,7 +204,6 @@ export function MessageInput({ conversationId, socket, onTyping }: MessageInputP
             </Button>
           </div>
 
-          {/* Send/Voice Button */}
           {message.trim() ? (
             <Button 
               onClick={sendMessage} 
@@ -232,7 +223,6 @@ export function MessageInput({ conversationId, socket, onTyping }: MessageInputP
           )}
         </div>
 
-        {/* Hidden File Inputs */}
         <input
           ref={imageInputRef}
           type="file"

@@ -8,12 +8,12 @@ export function useUserSync() {
 
   useEffect(() => {
     if (isLoaded && user) {
-      // Sync user with database when they login
+
       fetch('/api/users/sync', {
         method: 'POST'
       }).catch(console.error)
     }
-  }, [user, isLoaded])
+  }, [user, isLoaded])  
 
   return { user, isLoaded }
 }

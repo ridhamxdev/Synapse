@@ -38,7 +38,6 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Search users with debouncing
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchQuery.trim()) {
@@ -88,7 +87,6 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
     try {
       console.log('🚀 Starting conversation with user ID:', userId)
       
-      // Fixed: Ensure clean API endpoint without extra characters
       const response = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 
@@ -152,7 +150,6 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Find Users</h2>
@@ -162,7 +159,6 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
           </Button>
         </div>
 
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
@@ -174,7 +170,6 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
         </div>
       </div>
 
-      {/* Users List */}
       <ScrollArea className="flex-1">
         {loading ? (
           <div className="p-4">
@@ -208,7 +203,6 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
                 className="p-4 hover:bg-white dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="flex items-center space-x-4">
-                  {/* Avatar */}
                   <div className="relative flex-shrink-0">
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={foundUser.imageUrl} />
@@ -217,13 +211,11 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
                       </AvatarFallback>
                     </Avatar>
                     
-                    {/* Online indicator */}
                     {foundUser.isOnline && (
                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></div>
                     )}
                   </div>
 
-                  {/* User Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="font-medium truncate">{foundUser.name}</h3>
@@ -247,7 +239,6 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
                     )}
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="ghost"

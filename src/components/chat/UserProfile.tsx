@@ -40,7 +40,6 @@ export function UserProfile() {
 
   const handleSave = async () => {
     try {
-      // In a real app, you'd update the user profile via API
       setIsEditing(false)
       toast.success('Profile updated successfully')
     } catch (error) {
@@ -57,7 +56,6 @@ export function UserProfile() {
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Profile</h2>
@@ -73,7 +71,6 @@ export function UserProfile() {
 
       <ScrollArea className="flex-1">
         <div className="p-6 space-y-6">
-          {/* Profile Picture */}
           <div className="flex flex-col items-center space-y-4">
             <div className="relative">
               <Avatar className="h-24 w-24">
@@ -102,7 +99,6 @@ export function UserProfile() {
             </div>
           </div>
 
-          {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Basic Information</h3>
             
@@ -189,7 +185,6 @@ export function UserProfile() {
 
           <Separator />
 
-          {/* Settings */}
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Settings</h3>
             
@@ -218,7 +213,6 @@ export function UserProfile() {
 
           <Separator />
 
-          {/* Support */}
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Support</h3>
             

@@ -19,7 +19,6 @@ export function ConversationList({
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Fetch conversations from API - FIXED: plural endpoint
   useEffect(() => {
     fetchConversations()
   }, [])
@@ -28,7 +27,6 @@ export function ConversationList({
     try {
       console.log('📋 Fetching conversations...')
       
-      // FIXED: Changed from /api/conversation to /api/conversations
       const response = await fetch('/api/conversations', {
         method: 'GET',
         headers: {

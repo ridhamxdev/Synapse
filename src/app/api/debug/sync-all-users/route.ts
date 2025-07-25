@@ -5,23 +5,16 @@ import { prisma } from '@/lib/prisma'
 export async function POST(req: NextRequest) {
   try {
     console.log('🔄 Starting user synchronization...')
-    
-    // Get all users from Clerk
     const clerkResponse = await (await clerkClient()).users.getUserList({
       limit: 100
     })
-    
     console.log(`📊 Found ${clerkResponse.data.length} users in Clerk`)
-    
     const syncResults = []
-    
     for (const clerkUser of clerkResponse.data) {
       try {
-        // Check if user exists in database
         const existingUser = await prisma.user.findUnique({
           where: { clerkId: clerkUser.id }
         })
-
         const userData = {
           clerkId: clerkUser.id,
           name: clerkUser.fullName || `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 'Anonymous User',
@@ -32,13 +25,10 @@ export async function POST(req: NextRequest) {
           isOnline: false,
           lastSeen: new Date()
         }
-
         if (!existingUser) {
-          // Create new user
           const newUser = await prisma.user.create({
             data: userData
           })
-          
           syncResults.push({
             action: 'created',
             userId: newUser.id,
@@ -46,10 +36,8 @@ export async function POST(req: NextRequest) {
             email: newUser.email,
             clerkId: clerkUser.id
           })
-          
           console.log(`✅ Created user: ${newUser.name} (${newUser.id})`)
         } else {
-          // Update existing user
           const updatedUser = await prisma.user.update({
             where: { clerkId: clerkUser.id },
             data: {
@@ -59,7 +47,6 @@ export async function POST(req: NextRequest) {
               phone: userData.phone,
             }
           })
-          
           syncResults.push({
             action: 'updated',
             userId: updatedUser.id,
@@ -67,7 +54,6 @@ export async function POST(req: NextRequest) {
             email: updatedUser.email,
             clerkId: clerkUser.id
           })
-          
           console.log(`🔄 Updated user: ${updatedUser.name} (${updatedUser.id})`)
         }
       } catch (userError) {
@@ -80,10 +66,7 @@ export async function POST(req: NextRequest) {
         })
       }
     }
-
-    // Get final user count from database
     const totalDbUsers = await prisma.user.count()
-
     return NextResponse.json({
       success: true,
       message: 'User synchronization completed successfully',
@@ -96,7 +79,6 @@ export async function POST(req: NextRequest) {
         errors: syncResults.filter(r => r.action === 'error').length
       }
     })
-
   } catch (error) {
     console.error('🔴 Synchronization failed:', error)
     return NextResponse.json({ 

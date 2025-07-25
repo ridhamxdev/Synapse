@@ -39,16 +39,10 @@ export function ChatWindow({ conversationId, socket }: ChatWindowProps) {
 
   useEffect(() => {
     if (!socket || !conversationId) return
-
-    // Join conversation room
     socket.emit('join-conversation', conversationId)
-
-    // Listen for new messages
     socket.on('new-message', (message: any) => {
       setMessages((prev: any[]) => [...prev, message])
     })
-
-    // Listen for typing indicators
     socket.on('user-typing', (data: any) => {
       if (data.userId !== user?.id) {
         setTypingUsers((prev: string[]) => [...prev.filter(id => id !== data.userId), data.userId])
@@ -57,8 +51,6 @@ export function ChatWindow({ conversationId, socket }: ChatWindowProps) {
         }, 3000)
       }
     })
-
-    // Listen for message read receipts
     socket.on('message-read', (data: any) => {
       setMessages((prev: any[]) =>
         prev.map(msg =>
@@ -96,7 +88,6 @@ export function ChatWindow({ conversationId, socket }: ChatWindowProps) {
 
   return (
     <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
-      {/* Chat Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -133,7 +124,6 @@ export function ChatWindow({ conversationId, socket }: ChatWindowProps) {
         </div>
       </div>
 
-      {/* Messages */}
       <ScrollArea className="flex-1 px-6 py-4">
         <div className="space-y-4">
           {messages.map((message: any) => (
@@ -158,7 +148,6 @@ export function ChatWindow({ conversationId, socket }: ChatWindowProps) {
         </div>
       </ScrollArea>
 
-      {/* Message Input */}
       <MessageInput
         conversationId={conversationId}
         socket={socket}

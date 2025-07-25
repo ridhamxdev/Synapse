@@ -5,12 +5,9 @@ import { ChatApp } from '@/components/chat/ChatApp'
 
 export default async function ChatPage() {
   const user = await currentUser()
-  
-  // Redirect to home if not authenticated
   if (!user) {
     redirect('/')
   }
-  
   return (
     <ErrorBoundary>
       <ChatApp />

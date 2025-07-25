@@ -14,19 +14,15 @@ export default function SyncTestPage() {
   const handleSync = async () => {
     setIsLoading(true)
     setSyncResults(null)
-    
     try {
       toast.loading('Syncing users from Clerk to database...')
-      
       const response = await fetch('/api/debug/sync-all-users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         }
       })
-      
       const result = await response.json()
-      
       if (result.success) {
         setSyncResults(result)
         toast.success(`✅ Successfully synced ${result.totalClerkUsers} users!`)
@@ -55,7 +51,6 @@ export default function SyncTestPage() {
           Sync users from Clerk authentication to your local database
         </p>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -83,7 +78,6 @@ export default function SyncTestPage() {
                 </>
               )}
             </Button>
-            
             {syncResults && (
               <Button 
                 variant="outline" 
@@ -94,13 +88,11 @@ export default function SyncTestPage() {
               </Button>
             )}
           </div>
-          
           <p className="text-sm text-gray-500">
             This will fetch all users from Clerk and create/update corresponding records in your local database.
           </p>
         </CardContent>
       </Card>
-
       {syncResults && (
         <Card>
           <CardHeader>
@@ -110,7 +102,6 @@ export default function SyncTestPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Summary Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">{syncResults.totalClerkUsers}</div>
@@ -129,8 +120,6 @@ export default function SyncTestPage() {
                 <div className="text-sm text-red-600">Errors</div>
               </div>
             </div>
-
-            {/* Detailed Results */}
             {syncResults.syncResults.length > 0 && (
               <div className="space-y-2">
                 <h4 className="font-semibold">Detailed Results:</h4>
@@ -158,8 +147,6 @@ export default function SyncTestPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* Instructions */}
       <Card>
         <CardHeader>
           <CardTitle>Next Steps</CardTitle>

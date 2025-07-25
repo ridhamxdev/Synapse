@@ -1,10 +1,9 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { currentUser } from "@clerk/nextjs/server";
- 
+
 const f = createUploadthing();
- 
+
 export const ourFileRouter = {
-  // Image upload for profile pictures and chat images
   imageUploader: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })
     .middleware(async ({ req }) => {
       const user = await currentUser();
@@ -16,9 +15,7 @@ export const ourFileRouter = {
       console.log("File URL:", file.url);
       return { uploadedBy: metadata.userId };
     }),
-
-  // File upload for documents and other files
-  fileUploader: f({ 
+  fileUploader: f({
     pdf: { maxFileSize: "16MB", maxFileCount: 1 },
     text: { maxFileSize: "4MB", maxFileCount: 1 },
     "application/msword": { maxFileSize: "16MB", maxFileCount: 1 },
@@ -35,5 +32,3 @@ export const ourFileRouter = {
       return { uploadedBy: metadata.userId };
     }),
 } satisfies FileRouter;
- 
-export type OurFileRouter = typeof ourFileRouter;

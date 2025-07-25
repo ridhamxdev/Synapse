@@ -157,7 +157,6 @@ export function MessageBubble({ message, isOwn, showAvatar = true }: MessageBubb
       onMouseEnter={() => setShowOptions(true)}
       onMouseLeave={() => setShowOptions(false)}
     >
-      {/* Avatar for received messages */}
       {!isOwn && showAvatar && (
         <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarImage src={message.sender.imageUrl} />
@@ -167,7 +166,6 @@ export function MessageBubble({ message, isOwn, showAvatar = true }: MessageBubb
         </Avatar>
       )}
 
-      {/* Message bubble */}
       <div
         className={cn(
           "max-w-xs lg:max-w-md px-4 py-2 rounded-2xl relative",
@@ -177,17 +175,14 @@ export function MessageBubble({ message, isOwn, showAvatar = true }: MessageBubb
           "shadow-sm"
         )}
       >
-        {/* Sender name for group chats */}
         {!isOwn && (
           <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
             {message.sender.name}
           </p>
         )}
 
-        {/* Message content */}
         {renderMessageContent()}
 
-        {/* Message time and status */}
         <div className={cn(
           "flex items-center justify-end space-x-1 mt-1",
           isOwn ? "text-blue-100" : "text-gray-500"
@@ -209,7 +204,6 @@ export function MessageBubble({ message, isOwn, showAvatar = true }: MessageBubb
           )}
         </div>
 
-        {/* Message options */}
         {showOptions && (
           <div className={cn(
             "absolute top-0 flex space-x-1",
@@ -233,7 +227,6 @@ export function MessageBubble({ message, isOwn, showAvatar = true }: MessageBubb
         )}
       </div>
 
-      {/* Spacer for sent messages to maintain alignment */}
       {isOwn && <div className="w-8 flex-shrink-0" />}
     </div>
   )

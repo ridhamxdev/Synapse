@@ -36,7 +36,6 @@ export function Sidebar({
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-800">
-      {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
@@ -56,7 +55,6 @@ export function Sidebar({
           </Button>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="flex space-x-1">
           <Button
             variant={activePanel === 'chat' ? 'default' : 'ghost'}
@@ -88,7 +86,6 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Search */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -101,7 +98,6 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Content */}
       <ScrollArea className="flex-1">
         {activePanel === 'chat' && (
           <ConversationList
