@@ -47,11 +47,15 @@ export default function MessageBubble({ message, isOwn }: Props) {
           />
         )}
         
-        <div className={`relative px-3 py-2 rounded-lg shadow-sm ${
-          isOwn 
-            ? 'bg-green-500 text-white rounded-br-none' 
-            : 'bg-white text-gray-900 border rounded-bl-none'
-        }`}>
+        <div
+          className={
+            'relative px-3 py-2 rounded-lg shadow-sm' +
+            (isOwn
+              ? ' bg-green-500 text-white'
+              : ' bg-white text-gray-900 border'
+            )
+          }
+        >
           {!isOwn && (
             <div className="text-xs font-semibold text-blue-600 mb-1">
               {message.sender.name}

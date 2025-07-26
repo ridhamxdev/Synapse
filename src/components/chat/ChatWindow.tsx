@@ -118,7 +118,7 @@ export function ChatWindow({ conversation, socket, isConnected }: ChatWindowProp
         ) : (
           <div className="space-y-2">
             {messages.map(msg => {
-              const isOwn = msg.sender.clerkId === user?.id
+              const isOwn = msg.sender.id === user?.id;
               return (
                 <MessageBubble
                   key={msg.id}
