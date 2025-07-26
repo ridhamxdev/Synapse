@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { MessageInput } from './MessageInput'
-import { MessageBubble } from './MessageBubble'
+import MessageBubble from './MessageBubble'
 
 interface Message {
   id: string
@@ -17,13 +17,20 @@ interface Message {
   replyToId?: string
   sender: {
     id: string
+    clerkId: string
     name: string
     imageUrl?: string
   }
 }
 
 interface ChatWindowProps {
-  conversation: any
+  conversation: {
+    id: string
+    name?: string
+    imageUrl?: string
+    isOnline?: boolean
+    lastSeen?: string
+  }
   socket: any
   isConnected: boolean
 }
@@ -31,98 +38,51 @@ interface ChatWindowProps {
 export function ChatWindow({ conversation, socket, isConnected }: ChatWindowProps) {
   const { user } = useUser()
   const [messages, setMessages] = useState<Message[]>([])
-  const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const handleNewMessage = useCallback((message: Message) => {
-    if (message.conversationId !== conversation?.id) {
-      return
-    }
-
-    if (message.senderId === user?.id) {
-      return
-    }
-    
+    if (message.conversationId !== conversation.id) return
+    if (message.senderId === user?.id) return
     setMessages(prev => {
-      const exists = prev.some(m => m.id === message.id)
-      if (exists) {
-        return prev
-      }
+      if (prev.some(m => m.id === message.id)) return prev
       return [...prev, message]
     })
-  }, [conversation?.id, user?.id])
-
-  const handleTyping = useCallback(({ userId, isTyping }: { userId: string, isTyping: boolean }) => {
-    if (userId === user?.id) return
-
-    setTypingUsers(prev => {
-      if (isTyping) {
-        return prev.includes(userId) ? prev : [...prev, userId]
-      } else {
-        return prev.filter(id => id !== userId)
-      }
-    })
-  }, [user?.id])
+  }, [conversation.id, user?.id])
 
   const addOptimisticMessage = useCallback((message: Message) => {
     setMessages(prev => {
-      const exists = prev.some(m => m.id === message.id)
-      if (exists) return prev
+      if (prev.some(m => m.id === message.id)) return prev
       return [...prev, message]
     })
   }, [])
 
   useEffect(() => {
-    if (!conversation?.id) return
-
-    const loadMessages = async () => {
-      setIsLoadingMessages(true)
-      setMessages([])
-      try {
-        const response = await fetch(`/api/conversations/${conversation.id}/messages`)
-        if (response.ok) {
-          const data = await response.json()
-          setMessages(data.messages || [])
-        }
-      } catch (error) {
-        console.error('Failed to load messages:', error)
-      } finally {
-        setIsLoadingMessages(false)
-      }
-    }
-
-    loadMessages()
-  }, [conversation?.id])
+    if (!conversation.id) return
+    setIsLoadingMessages(true)
+    setMessages([])
+    fetch(`/api/conversations/${conversation.id}/messages`)
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(data => setMessages(data.messages || []))
+      .catch(console.error)
+      .finally(() => setIsLoadingMessages(false))
+  }, [conversation.id])
 
   useEffect(() => {
-    if (!socket || !conversation?.id) return
-
+    if (!socket || !conversation.id) return
     socket.emit('join-conversation', conversation.id)
     socket.on('message:new', handleNewMessage)
-    socket.on('user:typing', handleTyping)
-
     return () => {
       socket.off('message:new', handleNewMessage)
-      socket.off('user:typing', handleTyping)
       socket.emit('leave-conversation', conversation.id)
     }
-  }, [socket, conversation?.id, handleNewMessage, handleTyping])
+  }, [socket, conversation.id, handleNewMessage])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleTypingInput = (isTyping: boolean) => {
-    if (!socket || !conversation) return
-    
-    socket.emit('typing', {
-      conversationId: conversation.id,
-      isTyping
-    })
-  }
-
-  if (!conversation) {
+  if (!conversation.id) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-gray-500">Select a conversation to start chatting</p>
@@ -141,55 +101,41 @@ export function ChatWindow({ conversation, socket, isConnected }: ChatWindowProp
         <div className="flex-1">
           <h3 className="font-semibold">{conversation.name}</h3>
           <p className="text-xs text-gray-500">
-            {typingUsers.length > 0 
-              ? `${typingUsers.length} user${typingUsers.length > 1 ? 's' : ''} typing...`
-              : conversation?.isOnline 
-                ? 'Online' 
-                : `Last seen ${conversation?.lastSeen}`
-            }
+            {conversation.isOnline ? 'Online' : `Last seen ${conversation.lastSeen}`}
           </p>
         </div>
-        <div 
-          className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} 
-          title={isConnected ? 'Connected' : 'Disconnected'} 
+        <div
+          className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+          title={isConnected ? 'Connected' : 'Disconnected'}
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
         {isLoadingMessages ? (
           <div className="flex justify-center items-center h-full">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
           </div>
         ) : (
-          <>
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isOwn={message.senderId === user?.id}
-              />
-            ))}
-            
-            {typingUsers.length > 0 && (
-              <div className="flex items-center space-x-2 text-gray-500 text-sm">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                </div>
-                <span>typing...</span>
-              </div>
-            )}
-            
+          <div className="space-y-2">
+            {messages.map(msg => {
+              const isOwn = msg.sender.clerkId === user?.id
+              return (
+                <MessageBubble
+                  key={msg.id}
+                  message={msg}
+                  isOwn={isOwn}
+                />
+              )
+            })}
             <div ref={messagesEndRef} />
-          </>
+          </div>
         )}
       </div>
 
       <MessageInput
         conversationId={conversation.id}
         socket={socket}
-        onTyping={handleTypingInput}
+        onTyping={() => {}}
         onOptimisticMessage={addOptimisticMessage}
         disabled={!isConnected}
       />

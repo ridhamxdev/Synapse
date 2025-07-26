@@ -5,80 +5,92 @@ import { format } from 'date-fns'
 interface Message {
   id: string
   content: string
-  type: 'TEXT' | 'IMAGE' | 'FILE'
   senderId: string
   createdAt: string
+  type: 'TEXT' | 'IMAGE' | 'FILE'
   fileUrl?: string
   fileName?: string
+  isDelivered?: boolean
+  isRead?: boolean
+  readAt?: string
   sender: {
     id: string
+    clerkId: string
     name: string
     imageUrl?: string
   }
 }
 
-interface MessageBubbleProps {
+interface Props {
   message: Message
   isOwn: boolean
 }
 
-export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
+export default function MessageBubble({ message, isOwn }: Props) {
+  const messageTime = format(new Date(message.createdAt), 'HH:mm')
+
+  const getStatusIcon = () => {
+    if (!isOwn) return null
+    if (message.isRead) return <span className="text-blue-300 text-xs">✓✓</span>
+    if (message.isDelivered) return <span className="text-white text-xs opacity-70">✓✓</span>
+    return <span className="text-white text-xs opacity-70">✓</span>
+  }
+
   return (
-    <div className={`flex w-full mb-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
-      <div className={`flex items-end ${isOwn ? 'flex-row-reverse' : ''}`}>
+    <div className={`w-full flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`}>
+      <div className={`flex items-end gap-2 max-w-[75%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
         {!isOwn && (
           <img
             src={message.sender.imageUrl || '/default-avatar.png'}
             alt={message.sender.name}
-            className="w-8 h-8 rounded-full mr-2"
+            className="w-8 h-8 rounded-full flex-shrink-0 mb-1"
           />
         )}
-        <div className={
-          `px-4 py-2 rounded-lg shadow max-w-xs break-words ` +
-          (isOwn
-            ? 'bg-green-500 text-white rounded-br-none'
-            : 'bg-white text-gray-800 border rounded-bl-none shadow-sm')
-        }>
+        
+        <div className={`relative px-3 py-2 rounded-lg shadow-sm ${
+          isOwn 
+            ? 'bg-green-500 text-white rounded-br-none' 
+            : 'bg-white text-gray-900 border rounded-bl-none'
+        }`}>
           {!isOwn && (
-            <p className="text-xs font-semibold text-gray-600 mb-1">
+            <div className="text-xs font-semibold text-blue-600 mb-1">
               {message.sender.name}
-            </p>
+            </div>
           )}
+
           {message.type === 'TEXT' && (
-            <p className="text-sm break-words">{message.content}</p>
+            <div className="text-sm break-words whitespace-pre-wrap">
+              {message.content}
+            </div>
           )}
+
           {message.type === 'IMAGE' && message.fileUrl && (
             <div className="space-y-2">
               <img 
                 src={message.fileUrl} 
-                alt="Shared image" 
-                className="max-w-full h-auto rounded"
+                alt="shared-img" 
+                className="max-w-full h-auto rounded mb-2" 
               />
-              {message.content && (
-                <p className="text-sm break-words">{message.content}</p>
-              )}
+              {message.content && <div className="text-sm break-words">{message.content}</div>}
             </div>
           )}
+
           {message.type === 'FILE' && (
-            <div className="flex items-center space-x-2">
-              <div className="flex-1">
-                <p className="text-sm font-medium">{message.fileName}</p>
-                <p className="text-xs opacity-75">{message.content}</p>
-              </div>
-              {message.fileUrl && (
-                <a 
-                  href={message.fileUrl} 
-                  download={message.fileName}
-                  className="text-xs underline"
-                >
-                  Download
-                </a>
-              )}
-            </div>
+            <a
+              href={message.fileUrl || '#'}
+              download={message.fileName || undefined}
+              className="text-sm underline hover:no-underline"
+            >
+              {message.fileName || 'File'}
+            </a>
           )}
-          <p className={`text-xs mt-1 ${isOwn ? 'text-green-100' : 'text-gray-500'}`}>
-            {format(new Date(message.createdAt), 'HH:mm')}
-          </p>
+
+          <div className="flex items-center justify-end gap-1 mt-1">
+            <span className={`text-xs ${isOwn ? 'text-green-100' : 'text-gray-500'}`}>
+              {messageTime}
+            </span>
+            {getStatusIcon()}
+          </div>
         </div>
       </div>
     </div>

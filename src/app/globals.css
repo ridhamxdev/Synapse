@@ -1,3 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 255 255 255;
+  --foreground: 15 23 42;
+  --card: 255 255 255;
+  --card-foreground: 15 23 42;
+  --popover: 255 255 255;
+  --popover-foreground: 15 23 42;
+  --primary: 34 197 94;
+  --primary-foreground: 255 255 255;
+  --secondary: 241 245 249;
+  --secondary-foreground: 15 23 42;
+  --muted: 241 245 249;
+  --muted-foreground: 100 116 139;
+  --accent: 241 245 249;
+  --accent-foreground: 15 23 42;
+  --destructive: 239 68 68;
+  --destructive-foreground: 255 255 255;
+  --border: 226 232 240;
+  --input: 226 232 240;
+  --ring: 34 197 94;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 2 6 23;
+  --foreground: 248 250 252;
+  --card: 15 23 42;
+  --card-foreground: 248 250 252;
+  --popover: 15 23 42;
+  --popover-foreground: 248 250 252;
+  --primary: 34 197 94;
+  --primary-foreground: 255 255 255;
+  --secondary: 30 41 59;
+  --secondary-foreground: 248 250 252;
+  --muted: 30 41 59;
+  --muted-foreground: 148 163 184;
+  --accent: 30 41 59;
+  --accent-foreground: 248 250 252;
+  --destructive: 239 68 68;
+  --destructive-foreground: 248 250 252;
+  --border: 51 65 85;
+  --input: 51 65 85;
+  --ring: 34 197 94;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* Dark mode message bubbles */
+.dark .message-bubble.own {
+  background-color: #059669;
+}
+
+.dark .message-bubble.other {
+  background-color: #1e293b;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+/* Dark mode chat background */
+.dark .chat-background {
+  background-color: #0f172a;
+}
+
+.dark .sidebar-background {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -119,4 +198,37 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+/* Message bubble alignment fix */
+.message-container {
+  display: flex;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.message-container.own {
+  justify-content: flex-end;
+}
+
+.message-container.other {
+  justify-content: flex-start;
+}
+
+.message-bubble {
+  max-width: 75%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.message-bubble.own {
+  background-color: #22c55e;
+  color: white;
+  border-radius: 1rem 1rem 0.25rem 1rem;
+}
+
+.message-bubble.other {
+  background-color: white;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem 1rem 1rem 0.25rem;
 }

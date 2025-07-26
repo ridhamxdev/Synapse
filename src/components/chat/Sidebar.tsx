@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ConversationList } from '@/components/chat/ConversationList'
 import { SignOutButton } from '@/components/auth/SignOutButton'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { MessageSearch } from '@/components/chat/MessageSearch'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +37,7 @@ export function Sidebar({
 }: SidebarProps) {
   const { user } = useUser()
   const [searchQuery, setSearchQuery] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
 
   return (
     <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
@@ -66,7 +69,10 @@ export function Sidebar({
                 Profile
               </DropdownMenuItem>
               <DropdownMenuItem>
-                Settings
+                <ThemeToggle showText={true} />
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowSearch(true)}>
+                Search Messages
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>

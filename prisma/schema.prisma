@@ -13,9 +13,9 @@ model User {
   clerkId   String   @unique
   email     String   @unique
   name      String
-  imageUrl  String?  @db.VarChar(500)  // Changed from @db.Text
+  imageUrl  String?  @db.VarChar(500)
   phone     String?
-  bio       String   @default("Hey there! I'm using WhatsApp Clone.") @db.VarChar(500)  // Fixed: VarChar allows defaults
+  bio       String   @default("Hey there! I'm using WhatsApp Clone.") @db.VarChar(500)
   isOnline  Boolean  @default(false)
   lastSeen  DateTime @default(now())
   createdAt DateTime @default(now())
@@ -28,6 +28,9 @@ model User {
   groupMembers     GroupMember[]
   contacts         Contact[]          @relation("UserContacts")
   contactOf        Contact[]          @relation("ContactUser")
+  messageReads     MessageRead[]
+  messageReactions MessageReaction[]
+  settings         UserSettings?      // ✅ Added missing relationship
 
   @@map("users")
 }
@@ -36,7 +39,7 @@ model Conversation {
   id        String           @id @default(cuid())
   type      ConversationType @default(DIRECT)
   name      String?
-  imageUrl  String?          @db.VarChar(500)  // Changed from @db.Text
+  imageUrl  String?          @db.VarChar(500)
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
@@ -67,8 +70,8 @@ model ConversationUser {
 model Group {
   id          String   @id @default(cuid())
   name        String
-  description String?  @db.VarChar(1000)  // Changed from @db.Text
-  imageUrl    String?  @db.VarChar(500)   // Changed from @db.Text
+  description String?  @db.VarChar(1000)
+  imageUrl    String?  @db.VarChar(500)
   creatorId   String
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -77,7 +80,7 @@ model Group {
   // Relationships
   creator  User           @relation("GroupCreator", fields: [creatorId], references: [id])
   members  GroupMember[]
-  messages Message[]
+  messages Message[]      @relation("GroupMessages")
 
   @@index([creatorId])
   @@map("groups")
@@ -102,31 +105,38 @@ model GroupMember {
 
 model Message {
   id             String      @id @default(cuid())
-  content        String?     @db.VarChar(5000)  // Changed from @db.Text for better performance
+  content        String      @db.Text
   type           MessageType @default(TEXT)
-  fileUrl        String?     @db.VarChar(500)   // Changed from @db.Text
-  fileName       String?
-  fileSize       Int?
   senderId       String
   conversationId String?
   groupId        String?
   replyToId      String?
+  fileUrl        String?     @db.VarChar(1000)
+  fileName       String?
+  fileSize       Int?
+  duration       Int?
   isEdited       Boolean     @default(false)
   isDeleted      Boolean     @default(false)
+  isDelivered    Boolean     @default(false)
+  isRead         Boolean     @default(false)
+  readAt         DateTime?
+  deliveredAt    DateTime?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
   // Relationships
-  sender       User          @relation("MessageSender", fields: [senderId], references: [id])
-  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  group        Group?        @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  replyTo      Message?      @relation("MessageReply", fields: [replyToId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  replies      Message[]     @relation("MessageReply")
-  readBy       MessageRead[]
+  sender        User              @relation("MessageSender", fields: [senderId], references: [id])
+  conversation  Conversation?     @relation(fields: [conversationId], references: [id])
+  group         Group?           @relation("GroupMessages", fields: [groupId], references: [id])
+  replyTo       Message?         @relation("MessageReply", fields: [replyToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies       Message[]        @relation("MessageReply")
+  readBy        MessageRead[]
+  reactions     MessageReaction[]
 
   @@index([senderId])
   @@index([conversationId])
   @@index([groupId])
+  @@index([replyToId])
   @@index([createdAt])
   @@map("messages")
 }
@@ -139,11 +149,29 @@ model MessageRead {
 
   // Relationships
   message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([messageId, userId])
   @@index([messageId])
   @@index([userId])
   @@map("message_reads")
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  // Relationships
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@index([userId])
+  @@map("message_reactions")
 }
 
 model Contact {
@@ -163,6 +191,52 @@ model Contact {
   @@map("contacts")
 }
 
+model UserSettings {
+  id                    String  @id @default(cuid())
+  userId                String  @unique
+  theme                 String  @default("light")
+  notificationsEnabled  Boolean @default(true)
+  soundEnabled          Boolean @default(true)
+  readReceiptsEnabled   Boolean @default(true)
+  lastSeenEnabled       Boolean @default(true)
+  profilePhotoEnabled   Boolean @default(true)
+  language              String  @default("en")
+  fontSize              String  @default("medium")
+  wallpaper             String? @db.VarChar(500)
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_settings")
+}
+
+model MessageStatus {
+  id         String   @id @default(cuid())
+  messageId  String
+  userId     String
+  status     String
+  timestamp  DateTime @default(now())
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+  @@map("message_status")
+}
+
+model UserPresence {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  isOnline  Boolean   @default(false)
+  lastSeen  DateTime  @default(now())
+  status    String?   @default("available")
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([isOnline])
+  @@map("user_presence")
+}
+
 enum ConversationType {
   DIRECT
   GROUP
@@ -175,9 +249,21 @@ enum MessageType {
   AUDIO
   VIDEO
   DOCUMENT
+  VOICE
+  STICKER
+  LOCATION
+  CONTACT
 }
 
 enum GroupRole {
   ADMIN
+  MODERATOR
   MEMBER
+}
+
+enum UserStatus {
+  AVAILABLE
+  BUSY
+  AWAY
+  INVISIBLE
 }
