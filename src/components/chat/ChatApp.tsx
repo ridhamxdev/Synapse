@@ -21,7 +21,19 @@ interface Conversation {
   unreadCount: number
   isOnline: boolean
   lastSeen?: string
-  messages?: any[]
+  messages?: Array<{
+    id: string
+    content: string
+    type: string
+    senderId: string
+    conversationId: string
+    createdAt: string
+    updatedAt: string
+    isDelivered: boolean
+    isRead: boolean
+    readAt?: string
+    deliveredAt?: string
+  }>
 }
 
 export function ChatApp() {
@@ -62,7 +74,7 @@ export function ChatApp() {
   useEffect(() => {
     if (!socket) return
 
-    const handleNewConversation = (newConversation: any) => {
+    const handleNewConversation = (newConversation: Conversation) => {
       setConversations(prev => {
         const exists = prev.some(conv => conv.id === newConversation.id)
         if (exists) return prev
@@ -70,7 +82,7 @@ export function ChatApp() {
       })
     }
 
-    const handleConversationUpdate = (updatedConversation: any) => {
+    const handleConversationUpdate = (updatedConversation: Conversation) => {
       setConversations(prev => 
         prev.map(conv => 
           conv.id === updatedConversation.id ? { ...conv, ...updatedConversation } : conv

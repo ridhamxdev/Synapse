@@ -23,7 +23,20 @@ interface SidebarProps {
   onSelectConversation: (id: string | null) => void
   activePanel: 'chat' | 'contacts' | 'profile'
   onPanelChange: (panel: 'chat' | 'contacts' | 'profile') => void
-  conversations?: any[]
+  conversations?: Array<{
+    id: string
+    name: string
+    imageUrl?: string
+    lastMessage?: {
+      content: string
+      timestamp: string
+      senderId: string
+      senderName: string
+    }
+    unreadCount: number
+    isOnline: boolean
+    lastSeen?: string
+  }>
   isConnected?: boolean
 }
 
@@ -38,6 +51,13 @@ export function Sidebar({
   const { user } = useUser()
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
+
+  // Add search modal
+  const handleSearchClose = () => setShowSearch(false)
+  const handleResultSelect = (messageId: string) => {
+    // Handle message selection
+    setShowSearch(false)
+  }
 
   return (
     <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
@@ -132,7 +152,16 @@ export function Sidebar({
             onSelectConversation={onSelectConversation}
           />
         )}
-      </ScrollArea>
-    </div>
+              </ScrollArea>
+
+        {/* Search modal */}
+        {showSearch && (
+          <MessageSearch
+            conversationId={selectedConversation || ''}
+            onResultSelect={handleResultSelect}
+            onClose={handleSearchClose}
+          />
+        )}
+      </div>
   )
 }

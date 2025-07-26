@@ -23,6 +23,7 @@ const DropdownMenuContent = React.forwardRef<
     />
   </DropdownMenuPrimitive.Portal>
 ))
+DropdownMenuContent.displayName = "DropdownMenuContent"
 
 const DropdownMenuItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Item>,
@@ -31,12 +32,13 @@ const DropdownMenuItem = React.forwardRef<
   <DropdownMenuPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground",
+      "relative flex cursor-default select-none items-center rounded-none select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground",
       className
     )}
     {...props}
   />
 ))
+DropdownMenuItem.displayName = "DropdownMenuItem"
 
 const DropdownMenuSeparator = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Separator>,
@@ -48,6 +50,7 @@ const DropdownMenuSeparator = React.forwardRef<
     {...props}
   />
 ))
+DropdownMenuSeparator.displayName = "DropdownMenuSeparator"
 
 export {
   DropdownMenu,
