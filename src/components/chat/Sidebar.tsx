@@ -18,25 +18,33 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
+interface Conversation {
+  id: string
+  name: string
+  imageUrl?: string
+  lastMessage?: {
+    content: string
+    timestamp: string
+    senderId: string
+    senderName: string
+  }
+  unreadCount: number
+  isOnline: boolean
+  lastSeen?: string
+  participants: Array<{
+    id: string
+    name: string
+    imageUrl?: string
+  }>
+}
+
 interface SidebarProps {
   selectedConversation: string | null
   onSelectConversation: (id: string | null) => void
   activePanel: 'chat' | 'contacts' | 'profile'
   onPanelChange: (panel: 'chat' | 'contacts' | 'profile') => void
-  conversations?: Array<{
-    id: string
-    name: string
-    imageUrl?: string
-    lastMessage?: {
-      content: string
-      timestamp: string
-      senderId: string
-      senderName: string
-    }
-    unreadCount: number
-    isOnline: boolean
-    lastSeen?: string
-  }>
+  conversations: Conversation[]
+  isLoadingConversations?: boolean
   isConnected?: boolean
 }
 
@@ -46,6 +54,7 @@ export function Sidebar({
   activePanel,
   onPanelChange,
   conversations = [],
+  isLoadingConversations = false,
   isConnected = false
 }: SidebarProps) {
   const { user } = useUser()
@@ -60,18 +69,18 @@ export function Sidebar({
   }
 
   return (
-    <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-4 border-b border-gray-200">
+    <div className="w-80 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+      <div className="p-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <Avatar className="h-10 w-10">
+            <Avatar className="h-10 w-10 flex-shrink-0">
               <AvatarImage src={user?.imageUrl} />
               <AvatarFallback>
                 {user?.firstName?.charAt(0) || 'U'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold truncate">{user?.fullName}</h3>
+              <h3 className="font-semibold truncate text-gray-900">{user?.fullName}</h3>
               <p className="text-xs text-gray-500">
                 {isConnected ? 'Online' : 'Offline'}
               </p>
@@ -80,8 +89,10 @@ export function Sidebar({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                Menu
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                </svg>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -133,7 +144,7 @@ export function Sidebar({
         </div>
       </div>
 
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 flex-shrink-0">
         <div className="relative">
           <Input
             placeholder="Search conversations"
@@ -141,6 +152,9 @@ export function Sidebar({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
+          <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
       </div>
 
@@ -150,18 +164,20 @@ export function Sidebar({
             searchQuery={searchQuery}
             selectedConversation={selectedConversation}
             onSelectConversation={onSelectConversation}
+            conversations={conversations}
+            isLoading={isLoadingConversations}
           />
         )}
-              </ScrollArea>
+      </ScrollArea>
 
-        {/* Search modal */}
-        {showSearch && (
-          <MessageSearch
-            conversationId={selectedConversation || ''}
-            onResultSelect={handleResultSelect}
-            onClose={handleSearchClose}
-          />
-        )}
-      </div>
+      {/* Search modal */}
+      {showSearch && (
+        <MessageSearch
+          conversationId={selectedConversation || ''}
+          onResultSelect={handleResultSelect}
+          onClose={handleSearchClose}
+        />
+      )}
+    </div>
   )
 }

@@ -281,6 +281,7 @@ export function MessageInput({
           onClick={() => imageInputRef.current?.click()}
           disabled={isUploading || disabled || isRecording}
           title="Send Image"
+          className="p-2"
         >
           <Image className="h-5 w-5" />
         </Button>
@@ -291,18 +292,19 @@ export function MessageInput({
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading || disabled || isRecording}
           title="Send File"
+          className="p-2"
         >
           <Paperclip className="h-5 w-5" />
         </Button>
 
-        <div className="flex-1 flex items-center space-x-2 bg-gray-100 rounded-full px-4 py-2">
+        <div className="flex-1 flex items-center space-x-2 bg-gray-100 rounded-full px-4 py-2 min-h-[44px]">
           <Input
             ref={inputRef}
             value={message}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder={disabled ? "Connecting..." : "Type a message..."}
-            className="flex-1 border-none bg-transparent focus:ring-0"
+            className="flex-1 border-none bg-transparent focus:ring-0 text-sm"
             disabled={disabled || isUploading || isRecording}
           />
 
@@ -311,6 +313,7 @@ export function MessageInput({
             size="sm"
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             disabled={disabled || isRecording}
+            className="p-2"
           >
             <Smile className="h-5 w-5" />
           </Button>
@@ -320,7 +323,7 @@ export function MessageInput({
           <Button
             onClick={sendMessage}
             disabled={disabled || isUploading || isRecording}
-            className="bg-green-500 hover:bg-green-600 rounded-full p-2"
+            className="bg-green-500 hover:bg-green-600 rounded-full p-2 min-w-[44px] min-h-[44px]"
           >
             <Send className="h-5 w-5 text-white" />
           </Button>
@@ -330,7 +333,7 @@ export function MessageInput({
             onMouseUp={stopRecording}
             onMouseLeave={stopRecording}
             disabled={disabled || isUploading}
-            className="rounded-full p-2 bg-green-500 hover:bg-green-600"
+            className="rounded-full p-2 bg-green-500 hover:bg-green-600 min-w-[44px] min-h-[44px]"
           >
             <Mic className="h-5 w-5 text-white" />
           </Button>

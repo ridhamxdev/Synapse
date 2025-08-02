@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { MessageInput } from './MessageInput'
 import MessageBubble from './MessageBubble'
+import { TypingIndicator } from './TypingIndicator'
 
 interface Message {
   id: string
@@ -33,29 +34,90 @@ interface ChatWindowProps {
   }
   socket: any
   isConnected: boolean
+  onMessageSent?: (message: Message) => void
 }
 
-export function ChatWindow({ conversation, socket, isConnected }: ChatWindowProps) {
+export function ChatWindow({ conversation, socket, isConnected, onMessageSent }: ChatWindowProps) {
   const { user } = useUser()
+  const [dbUserId, setDbUserId] = useState<string | null>(null)
+
+  // Get the current user's database ID
+  useEffect(() => {
+    if (user?.id) {
+      fetch('/api/users/sync', {
+        method: 'POST'
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.user) {
+          setDbUserId(data.user.id)
+        }
+      })
+      .catch(console.error)
+    }
+  }, [user?.id])
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
+  const [typingUser, setTypingUser] = useState<string>('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const handleNewMessage = useCallback((message: Message) => {
     if (message.conversationId !== conversation.id) return
-    if (message.senderId === user?.id) return
+    // Check if the message is from the current user using database ID
+    if (message.senderId === dbUserId) return
     setMessages(prev => {
       if (prev.some(m => m.id === message.id)) return prev
       return [...prev, message]
     })
-  }, [conversation.id, user?.id])
+    // Stop typing indicator when message is received
+    setIsTyping(false)
+    setTypingUser('')
+  }, [conversation.id, dbUserId])
+
+  const handleTypingStart = useCallback((data: { userId: string; userName: string }) => {
+    // Check if the typing user is the current user
+    if (data.userId === user?.id) return
+    setIsTyping(true)
+    setTypingUser(data.userName)
+  }, [user?.id])
+
+  const handleTypingStop = useCallback((data: { userId: string }) => {
+    // Check if the typing user is the current user
+    if (data.userId === user?.id) return
+    setIsTyping(false)
+    setTypingUser('')
+  }, [user?.id])
 
   const addOptimisticMessage = useCallback((message: Message) => {
     setMessages(prev => {
       if (prev.some(m => m.id === message.id)) return prev
       return [...prev, message]
     })
-  }, [])
+    
+    // Notify parent component about the new message
+    if (onMessageSent) {
+      onMessageSent(message)
+    }
+  }, [onMessageSent])
+
+  const handleTyping = useCallback((isTyping: boolean) => {
+    if (!socket || !conversation.id || !user?.id) return
+    
+    if (isTyping) {
+      socket.emit('typing:start', {
+        conversationId: conversation.id,
+        userId: user.id,
+        userName: user.fullName || user.firstName || 'User'
+      })
+    } else {
+      socket.emit('typing:stop', {
+        conversationId: conversation.id,
+        userId: user.id
+      })
+    }
+  }, [socket, conversation.id, user?.id, user?.fullName, user?.firstName])
 
   useEffect(() => {
     if (!conversation.id) return
@@ -72,15 +134,19 @@ export function ChatWindow({ conversation, socket, isConnected }: ChatWindowProp
     if (!socket || !conversation.id) return
     socket.emit('join-conversation', conversation.id)
     socket.on('message:new', handleNewMessage)
+    socket.on('typing:start', handleTypingStart)
+    socket.on('typing:stop', handleTypingStop)
     return () => {
       socket.off('message:new', handleNewMessage)
+      socket.off('typing:start', handleTypingStart)
+      socket.off('typing:stop', handleTypingStop)
       socket.emit('leave-conversation', conversation.id)
     }
-  }, [socket, conversation.id, handleNewMessage])
+  }, [socket, conversation.id, handleNewMessage, handleTypingStart, handleTypingStop])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, isTyping])
 
   if (!conversation.id) {
     return (
@@ -91,54 +157,63 @@ export function ChatWindow({ conversation, socket, isConnected }: ChatWindowProp
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="bg-white border-b px-4 py-3 flex items-center space-x-3">
+    <div className="flex flex-col h-full bg-white">
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center space-x-3 flex-shrink-0">
         <img
           src={conversation.imageUrl || '/default-avatar.png'}
           alt={conversation.name}
-          className="w-10 h-10 rounded-full"
+          className="w-10 h-10 rounded-full object-cover"
         />
-        <div className="flex-1">
-          <h3 className="font-semibold">{conversation.name}</h3>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-gray-900 truncate">{conversation.name}</h3>
           <p className="text-xs text-gray-500">
             {conversation.isOnline ? 'Online' : `Last seen ${conversation.lastSeen}`}
           </p>
         </div>
         <div
-          className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+          className={`w-3 h-3 rounded-full flex-shrink-0 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
           title={isConnected ? 'Connected' : 'Disconnected'}
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-        {isLoadingMessages ? (
-          <div className="flex justify-center items-center h-full">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {messages.map(msg => {
-              const isOwn = msg.sender.id === user?.id;
-              return (
-                <MessageBubble
-                  key={msg.id}
-                  message={msg}
-                  isOwn={isOwn}
-                />
-              )
-            })}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+      <div className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="p-4">
+          {isLoadingMessages ? (
+            <div className="flex justify-center items-center h-full">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {messages.map(msg => {
+                // Compare using database user ID for accurate message ownership
+                const isOwn = msg.sender.id === dbUserId;
+                return (
+                  <MessageBubble
+                    key={msg.id}
+                    message={msg}
+                    isOwn={isOwn}
+                  />
+                )
+              })}
+              <TypingIndicator 
+                isTyping={isTyping} 
+                userName={typingUser}
+              />
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
       </div>
 
-      <MessageInput
-        conversationId={conversation.id}
-        socket={socket}
-        onTyping={() => {}}
-        onOptimisticMessage={addOptimisticMessage}
-        disabled={!isConnected}
-      />
+      <div className="flex-shrink-0">
+        <MessageInput
+          conversationId={conversation.id}
+          socket={socket}
+          onTyping={handleTyping}
+          onOptimisticMessage={addOptimisticMessage}
+          disabled={!isConnected}
+        />
+      </div>
     </div>
   )
 }

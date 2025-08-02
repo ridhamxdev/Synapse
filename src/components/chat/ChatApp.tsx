@@ -21,6 +21,11 @@ interface Conversation {
   unreadCount: number
   isOnline: boolean
   lastSeen?: string
+  participants: Array<{
+    id: string
+    name: string
+    imageUrl?: string
+  }>
   messages?: Array<{
     id: string
     content: string
@@ -37,7 +42,7 @@ interface Conversation {
 }
 
 export function ChatApp() {
-  const { user, isLoaded } = useUserSync()
+  const { user, isLoaded, dbUser } = useUserSync()
   const { socket, isConnected, connectionError } = useSocket()
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [activePanel, setActivePanel] = useState<'chat' | 'contacts' | 'profile'>('chat')
@@ -65,6 +70,12 @@ export function ChatApp() {
     }
   }, [isLoadingConversations, selectedConversation])
 
+  const handleMessageSent = useCallback((message: any) => {
+    // Don't update the conversation list when the current user sends a message
+    // The conversation list should only show messages from other users
+    // This keeps the sidebar clean and only shows incoming messages
+  }, [])
+
   useEffect(() => {
     if (isLoaded && user && conversations.length === 0) {
       loadUserConversations()
@@ -88,21 +99,62 @@ export function ChatApp() {
           conv.id === updatedConversation.id ? { ...conv, ...updatedConversation } : conv
         )
       )
+      
+      // Update selected conversation if it's the one being updated
+      if (selectedConversation?.id === updatedConversation.id) {
+        setSelectedConversation(updatedConversation)
+      }
     }
+
+    const handleNewMessage = (message: any) => {
+      // Update the conversation's last message when a new message arrives
+      // Only update if the message is from someone else (not the current user)
+      if (message.senderId !== dbUser?.id) {
+        setConversations(prev => 
+          prev.map(conv => {
+            if (conv.id === message.conversationId) {
+              return {
+                ...conv,
+                lastMessage: {
+                  content: message.content,
+                  timestamp: message.createdAt,
+                  senderId: message.senderId,
+                  senderName: message.sender?.name || 'Unknown'
+                },
+                unreadCount: conv.unreadCount + 1
+              }
+            }
+            return conv
+          })
+        )
+      }
+    }
+
 
     socket.on('conversation:new', handleNewConversation)
     socket.on('conversation:updated', handleConversationUpdate)
+    socket.on('message:new', handleNewMessage)
 
     return () => {
       socket.off('conversation:new', handleNewConversation)
       socket.off('conversation:updated', handleConversationUpdate)
+      socket.off('message:new', handleNewMessage)
     }
-  }, [socket])
+  }, [socket, selectedConversation?.id, dbUser?.id])
 
   const handleConversationSelect = (id: string | null) => {
     const conversation = conversations.find(c => c.id === id) || null
     setSelectedConversation(conversation)
     setActivePanel('chat')
+    
+    // Mark conversation as read when selected
+    if (conversation && conversation.unreadCount > 0) {
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === id ? { ...conv, unreadCount: 0 } : conv
+        )
+      )
+    }
   }
 
   const handleContactSelect = async (contactId: string) => {
@@ -142,29 +194,39 @@ export function ChatApp() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
       <Sidebar 
         selectedConversation={selectedConversation?.id ?? null}
         onSelectConversation={handleConversationSelect}
         activePanel={activePanel}
         onPanelChange={setActivePanel}
+        conversations={conversations}
+        isLoadingConversations={isLoadingConversations}
+        isConnected={isConnected}
       />
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col min-w-0">
         {activePanel === 'chat' && selectedConversation && (
           <ChatWindow
             conversation={selectedConversation as any}
             socket={socket}
             isConnected={isConnected}
+            onMessageSent={handleMessageSent}
           />
         )}
         {activePanel === 'chat' && !selectedConversation && (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-gray-500">
-              <h3 className="text-xl mb-2">Welcome to WhatsApp Clone</h3>
-              <p>Select a conversation to start chatting</p>
-              <p className="text-sm mt-2">
-                Status: {isConnected ? 'Connected' : 'Disconnected'}
-              </p>
+          <div className="flex items-center justify-center h-full bg-white">
+            <div className="text-center text-gray-500 max-w-md mx-auto px-4">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Welcome to WhatsApp Clone</h3>
+              <p className="text-gray-600 mb-4">Select a conversation to start chatting</p>
+              <div className="flex items-center justify-center space-x-2 text-sm">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
+              </div>
             </div>
           </div>
         )}
