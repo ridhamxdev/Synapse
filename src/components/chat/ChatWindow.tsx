@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { MessageInput } from './MessageInput'
+import { MessageInputLocal } from './MessageInputLocal'
 import MessageBubble from './MessageBubble'
 import { TypingIndicator } from './TypingIndicator'
 
@@ -206,7 +206,7 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
       </div>
 
       <div className="flex-shrink-0">
-        <MessageInput
+        <MessageInputLocal
           conversationId={conversation.id}
           socket={socket}
           onTyping={handleTyping}

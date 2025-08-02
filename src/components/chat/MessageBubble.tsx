@@ -1,15 +1,17 @@
 'use client'
 
 import { format } from 'date-fns'
+import { VoiceMessage } from './VoiceMessage'
 
 interface Message {
   id: string
   content: string
   senderId: string
   createdAt: string
-  type: 'TEXT' | 'IMAGE' | 'FILE'
+  type: 'TEXT' | 'IMAGE' | 'FILE' | 'VOICE'
   fileUrl?: string
   fileName?: string
+  fileSize?: number
   isDelivered?: boolean
   isRead?: boolean
   readAt?: string
@@ -96,6 +98,15 @@ export default function MessageBubble({ message, isOwn }: Props) {
                 {message.fileName || 'File'}
               </a>
             </div>
+          )}
+
+          {message.type === 'VOICE' && message.fileUrl && (
+            <VoiceMessage
+              fileUrl={message.fileUrl}
+              content={message.content}
+              fileSize={message.fileSize}
+              isOwn={isOwn}
+            />
           )}
 
           <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>

@@ -6,7 +6,8 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)',
   '/api/socket',
   '/api/webhook(.*)',
-  '/api/uploadthing(.*)'
+  '/api/upload(.*)'
+  // '/api/uploadthing(.*)' // Commented out - using local upload instead
 ])
 
 export default clerkMiddleware((auth, request) => {

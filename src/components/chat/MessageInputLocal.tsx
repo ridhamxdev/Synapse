@@ -1,20 +1,23 @@
-'use client'
-
-import { useState, useRef, useCallback } from 'react'
-import { useUser } from '@clerk/nextjs'
+import React, { useState, useRef, useCallback, Ref } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Card } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import {
-  Send,
-  Paperclip,
-  Mic,
-  Image,
-  Smile,
-  Square,
-  X
+import { 
+  Send, 
+  Paperclip, 
+  Image as ImageIcon, 
+  FileText, 
+  Mic, 
+  MicOff, 
+  X,
+  Smile
 } from 'lucide-react'
-import EmojiPicker, { Theme } from 'emoji-picker-react'
+import EmojiPicker from 'emoji-picker-react'
+import { useUser } from '@clerk/nextjs'
 
 interface MessageInputProps {
   conversationId: string
@@ -24,7 +27,7 @@ interface MessageInputProps {
   disabled?: boolean
 }
 
-export function MessageInput({
+export function MessageInputLocal({
   conversationId,
   socket,
   onTyping,
@@ -46,8 +49,6 @@ export function MessageInput({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-
-  // Local upload functions
 
   const sendMessage = useCallback(async () => {
     if (!message.trim() || !socket || disabled || !user?.id) return
@@ -134,8 +135,6 @@ export function MessageInput({
       const formData = new FormData()
       formData.append('audio', audioBlob, 'voice-message.webm')
       formData.append('conversationId', conversationId)
-      formData.append('type', 'VOICE')
-      formData.append('duration', recordingTime.toString())
 
       const response = await fetch(`/api/conversations/${conversationId}/voice`, {
         method: 'POST',
@@ -146,16 +145,15 @@ export function MessageInput({
         const savedMessage = await response.json()
         onOptimisticMessage(savedMessage.message)
         socket.emit('message:send', savedMessage.message)
-        toast.success("Voice message sent")
+        toast.success("Voice message sent successfully")
       } else {
-        throw new Error('Failed to save voice message')
+        throw new Error('Failed to send voice message')
       }
     } catch (error) {
-      toast.error("Failed to send voice message")
       console.error('Voice upload error:', error)
+      toast.error("Failed to send voice message")
     } finally {
       setIsUploading(false)
-      setRecordingTime(0)
     }
   }
 
@@ -173,9 +171,8 @@ export function MessageInput({
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setMessage(value)
-    onTyping(value.length > 0)
+    setMessage(e.target.value)
+    onTyping(e.target.value.length > 0)
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -303,22 +300,19 @@ export function MessageInput({
   const onEmojiClick = (emojiData: any) => {
     setMessage(prev => prev + emojiData.emoji)
     setShowEmojiPicker(false)
-    inputRef.current?.focus()
   }
 
   return (
-    <div className="border-t bg-white p-4">
+    <Card className="p-4 border-t">
       {replyTo && (
-        <div className="mb-2 p-2 bg-gray-100 rounded-lg flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-gray-600">
-              Replying to {replyTo.sender.name}
-            </p>
-            <p className="text-sm text-gray-800 truncate">{replyTo.content}</p>
+        <div className="mb-3 p-2 bg-muted rounded-lg relative">
+          <div className="text-sm text-muted-foreground">
+            Replying to: {replyTo.content.substring(0, 50)}...
           </div>
           <Button
             variant="ghost"
             size="sm"
+            className="absolute top-1 right-1 h-6 w-6 p-0"
             onClick={() => setReplyTo(null)}
           >
             <X className="h-4 w-4" />
@@ -326,120 +320,125 @@ export function MessageInput({
         </div>
       )}
 
-      {showEmojiPicker && (
-        <div className="absolute bottom-20 left-4 z-50">
-          <EmojiPicker 
-            onEmojiClick={onEmojiClick}
-            theme={Theme.LIGHT}
-          />
-        </div>
-      )}
-
       {isRecording && (
-        <div className="mb-2 p-3 bg-red-50 rounded-lg flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+        <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium text-red-700">
-              Recording: {formatRecordingTime(recordingTime)}
-            </span>
+            <span className="text-sm font-medium">Recording...</span>
+            <Badge variant="secondary">{formatRecordingTime(recordingTime)}</Badge>
           </div>
           <Button
-            onClick={stopRecording}
+            variant="outline"
             size="sm"
-            className="bg-red-500 hover:bg-red-600 text-white"
+            onClick={stopRecording}
+            className="text-red-600 border-red-300 hover:bg-red-50"
           >
-            <Square className="h-4 w-4" />
+            Stop
           </Button>
         </div>
       )}
 
-      <div className="flex items-end space-x-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => imageInputRef.current?.click()}
-          disabled={isUploading || disabled || isRecording}
-          title="Send Image"
-          className="p-2"
-        >
-          {isUploading ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-500"></div>
-          ) : (
-            <Image className="h-5 w-5" />
-          )}
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading || disabled || isRecording}
-          title="Send File"
-          className="p-2"
-        >
-          {isUploading ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-500"></div>
-          ) : (
-            <Paperclip className="h-5 w-5" />
-          )}
-        </Button>
-
-        <div className="flex-1 flex items-center space-x-2 bg-gray-100 rounded-full px-4 py-2 min-h-[44px]">
-          <Input
-            ref={inputRef}
+      <div className="flex items-end gap-2">
+        <div className="flex-1 relative">
+          <Textarea
+            ref={inputRef as Ref<HTMLTextAreaElement>}
             value={message}
-            onChange={handleInputChange}
+            onChange={(e) => {
+              setMessage(e.target.value)
+              onTyping(e.target.value.length > 0)
+            }}
             onKeyPress={handleKeyPress}
-            placeholder={disabled ? "Connecting..." : "Type a message..."}
-            className="flex-1 border-none bg-transparent focus:ring-0 text-sm"
-            disabled={disabled || isUploading || isRecording}
+            placeholder="Type a message..."
+            className="min-h-[40px] max-h-[120px] resize-none pr-20"
+            disabled={disabled || isUploading}
+          />
+          
+          <div className="absolute bottom-2 right-2 flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              disabled={disabled || isUploading}
+            >
+              <Smile className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+            disabled={disabled || isUploading}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.txt"
+            onChange={handleDocumentUpload}
+            className="hidden"
+            disabled={disabled || isUploading}
           />
 
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            disabled={disabled || isRecording}
-            className="p-2"
+            className="h-10 w-10 p-0"
+            onClick={() => imageInputRef.current?.click()}
+            disabled={disabled || isUploading}
           >
-            <Smile className="h-5 w-5" />
+            <ImageIcon className="h-4 w-4" />
           </Button>
-        </div>
 
-        {message.trim() ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-10 w-10 p-0"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled || isUploading}
+          >
+            <FileText className="h-4 w-4" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-10 w-10 p-0"
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={disabled || isUploading}
+          >
+            {isRecording ? (
+              <MicOff className="h-4 w-4 text-red-500" />
+            ) : (
+              <Mic className="h-4 w-4" />
+            )}
+          </Button>
+
           <Button
             onClick={sendMessage}
-            disabled={disabled || isUploading || isRecording}
-            className="bg-green-500 hover:bg-green-600 rounded-full p-2 min-w-[44px] min-h-[44px]"
+            disabled={!message.trim() || disabled || isUploading}
+            className="h-10 px-4"
           >
-            <Send className="h-5 w-5 text-white" />
+            <Send className="h-4 w-4" />
           </Button>
-        ) : (
-          <Button
-            onMouseDown={startRecording}
-            onMouseUp={stopRecording}
-            onMouseLeave={stopRecording}
-            disabled={disabled || isUploading}
-            className="rounded-full p-2 bg-green-500 hover:bg-green-600 min-w-[44px] min-h-[44px]"
-          >
-            <Mic className="h-5 w-5 text-white" />
-          </Button>
-        )}
+        </div>
       </div>
 
-      <input
-        ref={imageInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleImageUpload}
-        className="hidden"
-      />
-      <input
-        ref={fileInputRef}
-        type="file"
-        onChange={handleDocumentUpload}
-        className="hidden"
-      />
-    </div>
+      {showEmojiPicker && (
+        <div className="absolute bottom-full right-0 mb-2">
+          <EmojiPicker onEmojiClick={onEmojiClick} />
+        </div>
+      )}
+
+      {isUploading && (
+        <div className="mt-2 text-sm text-muted-foreground">
+          Uploading...
+        </div>
+      )}
+    </Card>
   )
-}
+} 

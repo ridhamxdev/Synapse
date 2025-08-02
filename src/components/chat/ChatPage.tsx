@@ -45,10 +45,9 @@ export function ChatPage() {
             } else {
               setSelectedConversation(null)
             }
-          }}
+          } }
           activePanel={activePanel}
-          onPanelChange={setActivePanel}
-        />
+          onPanelChange={setActivePanel} conversations={[]} isLoadingConversations={false} isConnected={false}   />
       </div>
       <div className="flex-1 flex flex-col">
         {activePanel === 'chat' && selectedConversation && (

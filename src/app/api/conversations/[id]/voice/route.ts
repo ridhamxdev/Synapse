@@ -36,13 +36,18 @@ export async function POST(
     const buffer = Buffer.from(bytes)
     
     const filename = `voice_${Date.now()}.webm`
-    const filepath = join(process.cwd(), 'public', 'uploads', 'voice', filename)
+    const voiceDir = join(process.cwd(), 'public', 'uploads', 'voice')
+    const filepath = join(voiceDir, filename)
+    
+    // Create voice directory if it doesn't exist
+    const { mkdir } = await import('fs/promises')
+    await mkdir(voiceDir, { recursive: true })
     
     await writeFile(filepath, buffer)
 
     const message = await prisma.message.create({
       data: {
-        content: `Voice message (${duration}s)`,
+        content: duration && duration !== 'null' ? `Voice message (${duration}s)` : 'Voice message',
         type: 'VOICE' as MessageType,
         conversationId,
         senderId: currentDbUser.id,
