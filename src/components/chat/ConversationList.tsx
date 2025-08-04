@@ -73,7 +73,7 @@ export function ConversationList({
     
     if (diffInHours < 24) {
       return format(date, 'HH:mm')
-    } else if (diffInHours < 168) { // 7 days
+    } else if (diffInHours < 168) {
       return format(date, 'EEE')
     } else {
       return format(date, 'MMM d')

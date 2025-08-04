@@ -13,5 +13,4 @@ export default function Page() {
   return <ChatPage />
 }
 
-// Disable static generation for this page
 export const dynamic = 'force-dynamic'

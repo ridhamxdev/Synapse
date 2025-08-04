@@ -14,8 +14,6 @@ export default function SignInPage() {
         </div>
         
         <SignIn 
-          fallbackRedirectUrl="/chat"
-          signUpFallbackRedirectUrl="/chat"
           appearance={{
             elements: {
               card: "shadow-lg border-0",

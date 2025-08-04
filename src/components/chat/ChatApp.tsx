@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useUserSync } from '@/hooks/useUserSync'
 import { useSocket } from '@/hooks/useSocket'
 import { Sidebar } from '@/components/chat/Sidebar'
@@ -48,6 +48,8 @@ export function ChatApp() {
   const [activePanel, setActivePanel] = useState<'chat' | 'contacts' | 'profile'>('chat')
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [isLoadingConversations, setIsLoadingConversations] = useState(false)
+  const [hasLoadedInitial, setHasLoadedInitial] = useState(false)
+  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const loadUserConversations = useCallback(async () => {
     if (isLoadingConversations) return
@@ -57,30 +59,48 @@ export function ChatApp() {
       const response = await fetch('/api/conversations')
       if (response.ok) {
         const data = await response.json()
-        setConversations(data.conversations || [])
+        const newConversations = data.conversations || []
+        setConversations(newConversations)
         
-        if (!selectedConversation && data.conversations?.length > 0) {
-          setSelectedConversation(data.conversations[0])
+        if (!selectedConversation && newConversations.length > 0) {
+          setSelectedConversation(newConversations[0])
         }
+        
+        setHasLoadedInitial(true)
       }
     } catch (error) {
       console.error('Failed to load conversations:', error)
     } finally {
       setIsLoadingConversations(false)
     }
-  }, [isLoadingConversations, selectedConversation])
+  }, [isLoadingConversations])
 
   const handleMessageSent = useCallback((message: any) => {
-    // Don't update the conversation list when the current user sends a message
-    // The conversation list should only show messages from other users
-    // This keeps the sidebar clean and only shows incoming messages
   }, [])
 
   useEffect(() => {
-    if (isLoaded && user && conversations.length === 0) {
+    if (isLoaded && user && !hasLoadedInitial) {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current)
+      }
+      
+      loadTimeoutRef.current = setTimeout(() => {
+        loadUserConversations()
+      }, 100)
+    }
+    
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current)
+      }
+    }
+  }, [isLoaded, user, hasLoadedInitial, loadUserConversations])
+
+  useEffect(() => {
+    if (isLoaded && user) {
       loadUserConversations()
     }
-  }, [isLoaded, user, conversations.length, loadUserConversations])
+  }, [user?.id, isLoaded])
 
   useEffect(() => {
     if (!socket) return
@@ -100,15 +120,12 @@ export function ChatApp() {
         )
       )
       
-      // Update selected conversation if it's the one being updated
       if (selectedConversation?.id === updatedConversation.id) {
         setSelectedConversation(updatedConversation)
       }
     }
 
     const handleNewMessage = (message: any) => {
-      // Update the conversation's last message when a new message arrives
-      // Only update if the message is from someone else (not the current user)
       if (message.senderId !== dbUser?.id) {
         setConversations(prev => 
           prev.map(conv => {
@@ -130,7 +147,6 @@ export function ChatApp() {
       }
     }
 
-
     socket.on('conversation:new', handleNewConversation)
     socket.on('conversation:updated', handleConversationUpdate)
     socket.on('message:new', handleNewMessage)
@@ -143,17 +159,43 @@ export function ChatApp() {
   }, [socket, selectedConversation?.id, dbUser?.id])
 
   const handleConversationSelect = (id: string | null) => {
-    const conversation = conversations.find(c => c.id === id) || null
-    setSelectedConversation(conversation)
-    setActivePanel('chat')
+    if (!id) {
+      setSelectedConversation(null)
+      setActivePanel('chat')
+      return
+    }
     
-    // Mark conversation as read when selected
-    if (conversation && conversation.unreadCount > 0) {
-      setConversations(prev => 
-        prev.map(conv => 
-          conv.id === id ? { ...conv, unreadCount: 0 } : conv
+    let conversation = conversations.find(c => c.id === id) || null
+    
+    if (!conversation) {
+      fetch(`/api/conversations/${id}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.conversation) {
+            setSelectedConversation(data.conversation)
+            setActivePanel('chat')
+            
+            setConversations(prev => {
+              const exists = prev.some(conv => conv.id === id)
+              if (exists) return prev
+              return [data.conversation, ...prev]
+            })
+          }
+        })
+        .catch(error => {
+          console.error('❌ Failed to fetch conversation:', error)
+        })
+    } else {
+      setSelectedConversation(conversation)
+      setActivePanel('chat')
+      
+      if (conversation.unreadCount > 0) {
+        setConversations(prev => 
+          prev.map(conv => 
+            conv.id === id ? { ...conv, unreadCount: 0 } : conv
+          )
         )
-      )
+      }
     }
   }
 
@@ -167,17 +209,32 @@ export function ChatApp() {
       
       if (response.ok) {
         const data = await response.json()
-        setSelectedConversation(data.conversation)
-        setActivePanel('chat')
         
-        loadUserConversations()
+        if (data.conversation && data.conversation.id) {
+          if (data.isNew) {
+            setConversations(prev => {
+              const exists = prev.some(conv => conv.id === data.conversation.id)
+              if (exists) return prev
+              return [data.conversation, ...prev]
+            })
+          }
+          
+          setSelectedConversation(data.conversation)
+          setActivePanel('chat')
+          
+        } else {
+          console.error('❌ Invalid conversation data:', data)
+        }
+      } else {
+        const errorText = await response.text()
+        console.error('❌ API Error:', response.status, errorText)
       }
     } catch (error) {
       console.error('Failed to create/find conversation:', error)
     }
   }
 
-  if (!isLoaded || isLoadingConversations) {
+  if (!isLoaded || (isLoadingConversations && !hasLoadedInitial)) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -231,7 +288,22 @@ export function ChatApp() {
           </div>
         )}
         {activePanel === 'contacts' && (
-          <ContactsPanel onSelectConversation={handleConversationSelect} />
+          <ContactsPanel onSelectConversation={(conversation) => {
+            if (conversation && conversation.id) {
+              setConversations(prev => {
+                const exists = prev.some(conv => conv.id === conversation.id)
+                if (exists) return prev
+                return [conversation, ...prev]
+              })
+              
+              setSelectedConversation(conversation)
+              setActivePanel('chat')
+              
+              setTimeout(() => {
+                loadUserConversations()
+              }, 500)
+            }
+          }} />
         )}
         {activePanel === 'profile' && (
           <UserProfile />

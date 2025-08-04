@@ -167,12 +167,19 @@ app.prepare().then(() => {
       activeUsers.set(userId, { socketId: socket.id, userName, userImage })
       userHeartbeats.set(userId, Date.now())
       try {
-        await prisma.user.update({
+        await prisma.user.upsert({
           where: { clerkId: userId },
-          data: { isOnline: true, lastSeen: new Date() }
+          update: { isOnline: true, lastSeen: new Date() },
+          create: {
+            clerkId: userId,
+            name: userName || 'Unknown User',
+            email: '', // Will be updated by sync
+            isOnline: true,
+            lastSeen: new Date()
+          }
         })
       } catch (e) {
-        console.error(e)
+        console.error('User upsert error:', e)
       }
       const online = Array.from(activeUsers.entries()).map(([id, info]) => ({
         userId: id, userName: info.userName, userImage: info.userImage, isOnline: true
@@ -237,12 +244,19 @@ app.prepare().then(() => {
         activeUsers.delete(uid)
         userHeartbeats.delete(uid)
         try {
-          await prisma.user.update({
+          await prisma.user.upsert({
             where: { clerkId: uid },
-            data: { isOnline: false, lastSeen: new Date() }
+            update: { isOnline: false, lastSeen: new Date() },
+            create: {
+              clerkId: uid,
+              name: 'Unknown User',
+              email: '',
+              isOnline: false,
+              lastSeen: new Date()
+            }
           })
         } catch (e) {
-          console.error(e)
+          console.error('User disconnect upsert error:', e)
         }
         socket.broadcast.emit('user-offline', { userId: uid })
       }

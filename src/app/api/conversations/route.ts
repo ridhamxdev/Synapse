@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 
-// Create new conversation
 export async function POST(req: NextRequest) {
   try {
     const user = await currentUser()
@@ -16,7 +15,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Participant ID required' }, { status: 400 })
     }
 
-    // Get current user from database
     const currentDbUser = await prisma.user.findUnique({
       where: { clerkId: user.id }
     })
@@ -25,7 +23,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Current user not found' }, { status: 404 })
     }
 
-    // Verify participant exists
     const participant = await prisma.user.findUnique({
       where: { id: participantId }
     })
@@ -34,7 +31,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Participant not found' }, { status: 404 })
     }
 
-    // Check if conversation already exists between these users
     const existingConversation = await prisma.conversation.findFirst({
       where: {
         type: 'DIRECT',
@@ -59,7 +55,8 @@ export async function POST(req: NextRequest) {
                 id: true,
                 name: true,
                 imageUrl: true,
-                isOnline: true
+                isOnline: true,
+                lastSeen: true
               }
             }
           }
@@ -77,17 +74,40 @@ export async function POST(req: NextRequest) {
     })
 
     if (existingConversation) {
-      console.log('📞 Returning existing conversation:', existingConversation.id)
+      const otherUser = existingConversation.users.find(u => u.userId !== currentDbUser.id)?.user
+      const lastMessage = existingConversation.messages[0]
+      
+      const transformedConversation = {
+        id: existingConversation.id,
+        type: existingConversation.type,
+        name: otherUser?.name || 'Unknown User',
+        imageUrl: otherUser?.imageUrl || null,
+        lastMessage: lastMessage ? {
+          content: lastMessage.content,
+          timestamp: lastMessage.createdAt,
+          senderId: lastMessage.senderId,
+          senderName: lastMessage.sender?.name || 'Unknown'
+        } : null,
+        unreadCount: 0,
+        isOnline: otherUser?.isOnline || false,
+        lastSeen: otherUser?.lastSeen || null,
+        participants: existingConversation.users.map(u => ({
+          id: u.user.id,
+          name: u.user.name,
+          imageUrl: u.user.imageUrl
+        }))
+      }
+      
       return NextResponse.json({ 
-        conversation: existingConversation,
+        conversation: transformedConversation,
         isNew: false
       })
     }
 
-    // Create new conversation
     const newConversation = await prisma.conversation.create({
       data: {
         type: 'DIRECT',
+        name: participant.name,
         users: {
           createMany: {
             data: [
@@ -105,7 +125,8 @@ export async function POST(req: NextRequest) {
                 id: true,
                 name: true,
                 imageUrl: true,
-                isOnline: true
+                isOnline: true,
+                lastSeen: true
               }
             }
           }
@@ -113,10 +134,26 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    console.log('✅ Created new conversation:', newConversation.id)
+    const otherUser = newConversation.users.find(u => u.userId !== currentDbUser.id)?.user
+    
+    const transformedConversation = {
+      id: newConversation.id,
+      type: newConversation.type,
+      name: otherUser?.name || 'Unknown User',
+      imageUrl: otherUser?.imageUrl || null,
+      lastMessage: null,
+      unreadCount: 0,
+      isOnline: otherUser?.isOnline || false,
+      lastSeen: otherUser?.lastSeen || null,
+      participants: newConversation.users.map(u => ({
+        id: u.user.id,
+        name: u.user.name,
+        imageUrl: u.user.imageUrl
+      }))
+    }
 
     return NextResponse.json({ 
-      conversation: newConversation,
+      conversation: transformedConversation,
       isNew: true
     })
 
@@ -129,7 +166,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Get user's conversations
 export async function GET(req: NextRequest) {
   try {
     const user = await currentUser()
@@ -189,12 +225,10 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    // Transform data for frontend with proper null checks
     const transformedConversations = conversations.map(({ conversation, lastReadAt }) => {
       const otherUser = conversation.users[0]?.user
       const lastMessage = conversation.messages[0]
       
-      // Count unread messages (messages sent after lastReadAt)
       const unreadCount = conversation.messages.filter(msg => 
         msg.senderId !== currentDbUser.id && 
         (!lastReadAt || msg.createdAt > lastReadAt) &&
@@ -204,7 +238,7 @@ export async function GET(req: NextRequest) {
       return {
         id: conversation.id,
         type: conversation.type,
-        name: safeString(otherUser?.name) || 'Unknown User', // Safe string handling
+        name: safeString(otherUser?.name) || 'Unknown User',
         imageUrl: safeString(otherUser?.imageUrl) || null,
         lastMessage: lastMessage ? {
           content: safeString(lastMessage.content) || '',
@@ -215,7 +249,12 @@ export async function GET(req: NextRequest) {
         unreadCount,
         isOnline: otherUser?.isOnline || false,
         lastSeen: otherUser?.lastSeen || null,
-        updatedAt: conversation.updatedAt
+        updatedAt: conversation.updatedAt,
+        participants: conversation.users.map(u => ({
+          id: u.user.id,
+          name: u.user.name,
+          imageUrl: u.user.imageUrl
+        }))
       }
     })
 
@@ -229,7 +268,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Helper function to safely handle strings
 function safeString(value: any): string | null {
   if (value === null || value === undefined) {
     return null
@@ -237,6 +275,5 @@ function safeString(value: any): string | null {
   if (typeof value === 'string') {
     return value
   }
-  // Convert to string if it's another type
   return String(value)
 }

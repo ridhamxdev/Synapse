@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 
 interface ContactsPanelProps {
-  onSelectConversation: (id: string) => void
+  onSelectConversation: (conversation: any) => void
 }
 
 interface User {
@@ -107,7 +107,7 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
       const data = await response.json()
       
       if (data.conversation && data.conversation.id) {
-        onSelectConversation(data.conversation.id)
+        onSelectConversation(data.conversation)
         toast.success(data.isNew ? 'New conversation started!' : 'Opened existing conversation!')
       } else {
         console.error('❌ Invalid conversation data:', data)
