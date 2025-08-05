@@ -166,6 +166,10 @@ app.prepare().then(() => {
       socket.userId = userId
       activeUsers.set(userId, { socketId: socket.id, userName, userImage })
       userHeartbeats.set(userId, Date.now())
+      
+      // Join user's personal room for receiving updates
+      socket.join(`user:${userId}`)
+      
       try {
         await prisma.user.upsert({
           where: { clerkId: userId },
@@ -189,7 +193,9 @@ app.prepare().then(() => {
     })
 
     socket.on('join-conversation', convId => {
-      if (convId) socket.join(`conversation:${convId}`)
+      if (convId) {
+        socket.join(`conversation:${convId}`)
+      }
     })
     socket.on('leave-conversation', convId => {
       if (convId) socket.leave(`conversation:${convId}`)
@@ -198,12 +204,25 @@ app.prepare().then(() => {
     socket.on('message:send', async data => {
       const { conversationId, id } = data
       if (!conversationId) return socket.emit('message-error', { error: 'Invalid conversation ID' })
+      
+      // Broadcast the message to all users in the conversation (except sender)
       socket.to(`conversation:${conversationId}`).emit('message:new', data)
+      
       try {
+        // Get conversation details and update last message
         const conv = await prisma.conversation.findUnique({
           where: { id: conversationId },
           include: {
-            users: { select: { userId: true } },
+            users: { 
+              select: { 
+                userId: true,
+                user: {
+                  select: {
+                    clerkId: true
+                  }
+                }
+              } 
+            },
             messages: {
               orderBy: { createdAt: 'desc' },
               take: 1,
@@ -211,14 +230,17 @@ app.prepare().then(() => {
             }
           }
         })
+        
         if (conv) {
           const updateData = {
             id: conv.id,
             lastMessage: conv.messages[0],
             updatedAt: conv.updatedAt
           }
-          conv.users.forEach(({ userId }) => {
-            io.to(`user:${userId}`).emit('conversation:updated', updateData)
+          
+          // Emit conversation update to all users in the conversation
+          conv.users.forEach(({ user }) => {
+            io.to(`user:${user.clerkId}`).emit('conversation:updated', updateData)
           })
         }
       } catch (e) {
@@ -226,13 +248,23 @@ app.prepare().then(() => {
       }
     })
 
-    socket.on('typing', data => {
-      const { conversationId, isTyping } = data
-      if (conversationId && socket.userId) {
+    socket.on('typing:start', data => {
+      const { conversationId, userId, userName } = data
+      if (conversationId && userId) {
         userHeartbeats.set(socket.userId, Date.now())
-        socket.to(`conversation:${conversationId}`).emit('user:typing', {
-          userId: socket.userId,
-          isTyping: Boolean(isTyping)
+        socket.to(`conversation:${conversationId}`).emit('typing:start', {
+          userId: userId,
+          userName: userName
+        })
+      }
+    })
+
+    socket.on('typing:stop', data => {
+      const { conversationId, userId } = data
+      if (conversationId && userId) {
+        userHeartbeats.set(socket.userId, Date.now())
+        socket.to(`conversation:${conversationId}`).emit('typing:stop', {
+          userId: userId
         })
       }
     })

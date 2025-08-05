@@ -66,7 +66,7 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
   const handleNewMessage = useCallback((message: Message) => {
     if (message.conversationId !== conversation.id) return
     // Check if the message is from the current user using database ID
-    if (message.senderId === dbUserId) return
+    if (message.sender.id === dbUserId) return
     setMessages(prev => {
       if (prev.some(m => m.id === message.id)) return prev
       return [...prev, message]
@@ -77,18 +77,18 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
   }, [conversation.id, dbUserId])
 
   const handleTypingStart = useCallback((data: { userId: string; userName: string }) => {
-    // Check if the typing user is the current user
-    if (data.userId === user?.id) return
+    // Check if the typing user is the current user using database ID
+    if (data.userId === dbUserId) return
     setIsTyping(true)
     setTypingUser(data.userName)
-  }, [user?.id])
+  }, [dbUserId])
 
   const handleTypingStop = useCallback((data: { userId: string }) => {
-    // Check if the typing user is the current user
-    if (data.userId === user?.id) return
+    // Check if the typing user is the current user using database ID
+    if (data.userId === dbUserId) return
     setIsTyping(false)
     setTypingUser('')
-  }, [user?.id])
+  }, [dbUserId])
 
   const addOptimisticMessage = useCallback((message: Message) => {
     setMessages(prev => {
@@ -103,21 +103,21 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
   }, [onMessageSent])
 
   const handleTyping = useCallback((isTyping: boolean) => {
-    if (!socket || !conversation.id || !user?.id) return
+    if (!socket || !conversation.id || !dbUserId) return
     
     if (isTyping) {
       socket.emit('typing:start', {
         conversationId: conversation.id,
-        userId: user.id,
-        userName: user.fullName || user.firstName || 'User'
+        userId: dbUserId,
+        userName: user?.username || user?.fullName || user?.firstName || 'User'
       })
     } else {
       socket.emit('typing:stop', {
         conversationId: conversation.id,
-        userId: user.id
+        userId: dbUserId
       })
     }
-  }, [socket, conversation.id, user?.id, user?.fullName, user?.firstName])
+  }, [socket, conversation.id, dbUserId, user?.fullName, user?.firstName])
 
   useEffect(() => {
     if (!conversation.id) return
@@ -151,22 +151,22 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
   if (!conversation.id) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-gray-500">Select a conversation to start chatting</p>
+        <p className="text-muted-foreground">Select a conversation to start chatting</p>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center space-x-3 flex-shrink-0">
+    <div className="flex flex-col h-full bg-background">
+      <div className="bg-card border-b border-border px-4 py-3 flex items-center space-x-3 flex-shrink-0">
         <img
           src={conversation.imageUrl || '/default-avatar.png'}
           alt={conversation.name}
           className="w-10 h-10 rounded-full object-cover"
         />
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 truncate">{conversation.name}</h3>
-          <p className="text-xs text-gray-500">
+          <h3 className="font-semibold text-foreground truncate">{conversation.name}</h3>
+          <p className="text-xs text-muted-foreground">
             {conversation.isOnline ? 'Online' : `Last seen ${conversation.lastSeen}`}
           </p>
         </div>
@@ -176,7 +176,7 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-gray-50">
+      <div className="flex-1 overflow-y-auto bg-muted/30">
         <div className="p-4">
           {isLoadingMessages ? (
             <div className="flex justify-center items-center h-full">
@@ -212,6 +212,7 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
           onTyping={handleTyping}
           onOptimisticMessage={addOptimisticMessage}
           disabled={!isConnected}
+          dbUserId={dbUserId}
         />
       </div>
     </div>

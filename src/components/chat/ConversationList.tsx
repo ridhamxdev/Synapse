@@ -43,7 +43,7 @@ export function ConversationList({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
       </div>
     )
   }
@@ -54,9 +54,9 @@ export function ConversationList({
 
   if (filteredConversations.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-gray-500">
-        <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="flex flex-col items-center justify-center p-8 text-muted-foreground">
+        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+          <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
         </div>
@@ -85,7 +85,7 @@ export function ConversationList({
   }
 
   return (
-    <div className="divide-y divide-gray-200">
+    <div className="divide-y divide-border">
       {filteredConversations.map((conv) => {
         const isSelected = selectedConversation === conv.id
         const otherParticipant = conv.participants?.find(p => p.id !== user?.id)
@@ -97,8 +97,8 @@ export function ConversationList({
             key={conv.id}
             className={`p-4 cursor-pointer transition-colors duration-150 ${
               isSelected 
-                ? 'bg-green-50 border-r-2 border-green-500' 
-                : 'hover:bg-gray-50'
+                ? 'bg-primary/10 border-r-2 border-primary' 
+                : 'hover:bg-accent'
             }`}
             onClick={() => onSelectConversation(conv.id)}
           >
@@ -117,12 +117,12 @@ export function ConversationList({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <h4 className={`text-sm font-medium truncate ${
-                    isSelected ? 'text-green-700' : 'text-gray-900'
+                    isSelected ? 'text-primary' : 'text-foreground'
                   }`}>
                     {displayName}
                   </h4>
                   {conv.lastMessage && (
-                    <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                    <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
                       {formatLastMessageTime(conv.lastMessage.timestamp)}
                     </span>
                   )}
@@ -130,20 +130,20 @@ export function ConversationList({
                 
                 {conv.lastMessage ? (
                   <div className="flex items-center justify-between mt-1">
-                    <p className="text-sm text-gray-600 truncate">
-                      <span className="text-gray-500">
+                    <p className="text-sm text-muted-foreground truncate">
+                      <span className="text-muted-foreground">
                         {conv.lastMessage.senderId === user?.id ? 'You: ' : ''}
                       </span>
                       {truncateMessage(conv.lastMessage.content)}
                     </p>
                     {conv.unreadCount > 0 && (
-                      <span className="ml-2 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center flex-shrink-0">
+                      <span className="ml-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center flex-shrink-0">
                         {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
                       </span>
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 mt-1">No messages yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">No messages yet</p>
                 )}
               </div>
             </div>

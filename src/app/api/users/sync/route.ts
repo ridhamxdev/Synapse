@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       const updatedUser = await prisma.user.update({
         where: { clerkId: user.id },
         data: {
-          name: user.fullName || `${user.firstName} ${user.lastName}`,
+          name: user.username || user.fullName || `${user.firstName} ${user.lastName}`,
           email: user.emailAddresses[0]?.emailAddress || '',
           imageUrl: user.imageUrl,
           phone: user.phoneNumbers[0]?.phoneNumber || null,
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const newUser = await prisma.user.create({
       data: {
         clerkId: user.id,
-        name: user.fullName || `${user.firstName} ${user.lastName}`,
+        name: user.username || user.fullName || `${user.firstName} ${user.lastName}`,
         email: user.emailAddresses[0]?.emailAddress || '',
         imageUrl: user.imageUrl,
         phone: user.phoneNumbers[0]?.phoneNumber || null,

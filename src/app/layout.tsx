@@ -1,6 +1,7 @@
 import './globals.css'
 import { ClerkProvider } from '@clerk/nextjs'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { ProfileProvider } from '@/contexts/ProfileContext'
 import { Toaster } from '@/components/ui/sonner'
 
 export const metadata = {
@@ -28,11 +29,39 @@ export default function RootLayout({
         }
       }}
     >
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function() {
+                  try {
+                    var theme = localStorage.getItem('whatsapp-theme');
+                    var systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                    var initialTheme = theme || systemTheme;
+                    
+                    if (initialTheme === 'dark') {
+                      document.documentElement.classList.add('dark');
+                    } else {
+                      document.documentElement.classList.remove('dark');
+                    }
+                    document.documentElement.setAttribute('data-theme', initialTheme);
+                  } catch (e) {
+                    // Fallback to light theme if localStorage is not available
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.setAttribute('data-theme', 'light');
+                  }
+                })();
+              `,
+            }}
+          />
+        </head>
         <body>
           <ThemeProvider>
-            {children}
-            <Toaster position="top-right" richColors />
+            <ProfileProvider>
+              {children}
+              <Toaster position="top-right" richColors />
+            </ProfileProvider>
           </ThemeProvider>
         </body>
       </html>

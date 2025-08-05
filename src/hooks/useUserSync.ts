@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useUser } from '@clerk/nextjs'
 
 interface DbUser {
@@ -18,21 +18,47 @@ interface DbUser {
 export function useUserSync() {
   const { user, isLoaded } = useUser()
   const [dbUser, setDbUser] = useState<DbUser | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    if (isLoaded && user) {
-      fetch('/api/users/sync', {
+  const syncUser = useCallback(async () => {
+    if (!isLoaded || !user) return
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/users/sync', {
         method: 'POST'
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.user) {
-          setDbUser(data.user)
-        }
-      })
-      .catch(console.error)
+      const data = await response.json()
+      if (data.user) {
+        setDbUser(data.user)
+      }
+    } catch (error) {
+      console.error('User sync error:', error)
+    } finally {
+      setIsLoading(false)
     }
-  }, [user, isLoaded])  
+  }, [user, isLoaded])
 
-  return { user, isLoaded, dbUser }
+  const refreshUser = useCallback(async () => {
+    if (!isLoaded || !user) return
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/users/profile')
+      const data = await response.json()
+      if (data.user) {
+        setDbUser(data.user)
+      }
+    } catch (error) {
+      console.error('User refresh error:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user, isLoaded])
+
+  useEffect(() => {
+    syncUser()
+  }, [syncUser])
+
+  return { user, isLoaded, dbUser, isLoading, refreshUser, syncUser }
 }

@@ -40,11 +40,7 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (searchQuery.trim()) {
-        searchUsers()
-      } else {
-        setUsers([])
-      }
+      searchUsers()
     }, 300)
 
     return () => clearTimeout(timeoutId)
@@ -139,10 +135,10 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6">
+    <div className="flex flex-col h-full bg-background">
+      <div className="bg-card border-b border-border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Find Users</h2>
+          <h2 className="text-xl font-semibold">Contacts</h2>
           <Button size="sm" variant="outline">
             <Users className="h-4 w-4 mr-2" />
             New Group
@@ -152,7 +148,7 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Search users by name, email, or phone..."
+            placeholder="Search contacts by name, email, or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -176,22 +172,22 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
             </div>
           </div>
         ) : users.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
             <Users className="h-12 w-12 mb-4 opacity-50" />
             <p className="text-center">
-              {searchQuery ? 'No users found' : 'Search for users to start chatting'}
+              {searchQuery ? 'No contacts found' : 'No contacts available'}
             </p>
             <p className="text-sm text-center mt-2">
-              {searchQuery ? 'Try a different search term' : 'Enter a name, email, or phone number'}
+              {searchQuery ? 'Try a different search term' : 'No users have joined yet'}
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100 dark:divide-gray-700">
+          <div className="divide-y divide-border">
             {users.map((foundUser) => (
-              <div
-                key={foundUser.id}
-                className="p-4 hover:bg-white dark:hover:bg-gray-800 transition-colors"
-              >
+                             <div
+                 key={foundUser.id}
+                 className="p-4 hover:bg-accent transition-all duration-200 hover-lift"
+               >
                 <div className="flex items-center space-x-4">
                   <div className="relative flex-shrink-0">
                     <Avatar className="h-12 w-12">
@@ -208,7 +204,7 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-medium truncate">{foundUser.name}</h3>
+                      <h3 className="font-medium truncate text-foreground">{foundUser.name}</h3>
                       <div className="flex items-center space-x-1">
                         {foundUser.isOnline && (
                           <Badge variant="outline" className="text-xs text-green-600">
@@ -218,27 +214,28 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
                       </div>
                     </div>
                     
-                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                    <p className="text-sm text-muted-foreground truncate">
                       {foundUser.bio || foundUser.email}
                     </p>
                     
                     {!foundUser.isOnline && foundUser.lastSeen && (
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {formatLastSeen(foundUser.lastSeen)}
                       </p>
                     )}
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleStartConversation(foundUser.id)}
-                      title="Start Chat"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                    </Button>
-                  </div>
+                                     <div className="flex items-center space-x-2">
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => handleStartConversation(foundUser.id)}
+                       title="Start Chat"
+                       className="hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                     >
+                       <MessageCircle className="h-4 w-4" />
+                     </Button>
+                   </div>
                 </div>
               </div>
             ))}

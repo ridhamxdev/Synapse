@@ -25,6 +25,7 @@ interface MessageInputProps {
   onTyping: (isTyping: boolean) => void
   onOptimisticMessage: (message: any) => void
   disabled?: boolean
+  dbUserId?: string | null
 }
 
 export function MessageInputLocal({
@@ -32,7 +33,8 @@ export function MessageInputLocal({
   socket,
   onTyping,
   onOptimisticMessage,
-  disabled
+  disabled,
+  dbUserId
 }: MessageInputProps) {
   const { user } = useUser()
   const [message, setMessage] = useState('')

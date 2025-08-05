@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       }, { status: 404 })
     }
     if (!query.trim()) {
-      const recentUsers = await prisma.user.findMany({
+      const allUsers = await prisma.user.findMany({
         where: { id: { not: currentDbUser.id } },
         select: {
           id: true,
@@ -39,13 +39,13 @@ export async function GET(req: NextRequest) {
           { lastSeen: 'desc' },
           { createdAt: 'desc' }
         ],
-        take: 10
+        take: 50
       })
       return NextResponse.json({ 
-        users: recentUsers,
-        total: recentUsers.length,
+        users: allUsers,
+        total: allUsers.length,
         query: '',
-        type: 'recent'
+        type: 'all'
       })
     }
     const queryWords = query.toLowerCase().split(' ').filter(word => word.length > 0)

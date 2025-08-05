@@ -43,7 +43,7 @@ export const useSocket = () => {
       autoConnect: true,
       auth: {
         userId: user.id,
-        userName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        userName: user.username || user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         userImage: user.imageUrl || null,
         timestamp: Date.now().toString()
       }
@@ -56,7 +56,7 @@ export const useSocket = () => {
 
       socketInstance.emit('authenticate', {
         userId: user.id,
-        userName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        userName: user.username || user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         userImage: user.imageUrl || null,
         timestamp: Date.now()
       })
