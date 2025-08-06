@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
+
 import { toast } from 'sonner'
 import { 
   UserPlus, 
@@ -171,6 +172,8 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
           />
         </div>
       </div>
+
+
 
       <ScrollArea className="flex-1">
         {loading ? (

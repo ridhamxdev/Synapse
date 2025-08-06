@@ -786,3 +786,33 @@
   transform: translateY(-2px);
   box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
 }
+
+/* Prevent unwanted blue hover effects */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom button hover states to prevent blue */
+button:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Drawer specific styles */
+[data-radix-dialog-content] {
+  background: hsl(var(--background));
+  border-color: hsl(var(--border));
+}
+
+/* Prevent blue hover on clickable elements */
+.clickable:focus-visible,
+.clickable:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Custom hover states for drawer elements */
+.drawer-hover:hover {
+  background-color: hsl(var(--muted));
+  transition: background-color 0.2s ease;
+}

@@ -19,10 +19,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true)
     
-    // Get theme from localStorage or system preference
+    // Get theme from localStorage or default to light theme
     const savedTheme = localStorage.getItem('whatsapp-theme') as Theme
-    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    const initialTheme = savedTheme || systemTheme
+    const initialTheme = savedTheme || 'light' // Default to light theme instead of system theme
     
     setTheme(initialTheme)
     updateTheme(initialTheme)

@@ -391,7 +391,7 @@ export function MessageInput({
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder={disabled ? "Connecting..." : "Type a message..."}
-            className="flex-1 border-none bg-transparent focus:ring-0 text-sm"
+            className="flex-1 border-none bg-transparent text-white focus:ring-0 text-sm"
             disabled={disabled || isUploading || isRecording}
           />
 

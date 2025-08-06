@@ -2,10 +2,15 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useUser } from '@clerk/nextjs'
+import { useTheme } from '@/contexts/ThemeContext'
 import { MessageInputLocal } from './MessageInputLocal'
+import { Button } from '@/components/ui/button'
+import { Video, Phone, Monitor } from 'lucide-react'
+import { format } from 'date-fns'
 import MessageBubble from './MessageBubble'
 import { TypingIndicator } from './TypingIndicator'
 import { Spotlight } from '@/components/ui/spotlight'
+import { UserProfileDrawer } from './UserProfileDrawer'
 
 interface Message {
   id: string
@@ -32,6 +37,7 @@ interface ChatWindowProps {
     imageUrl?: string
     isOnline?: boolean
     lastSeen?: string
+    otherUserId?: string
   }
   socket: any
   isConnected: boolean
@@ -40,7 +46,9 @@ interface ChatWindowProps {
 
 export function ChatWindow({ conversation, socket, isConnected, onMessageSent }: ChatWindowProps) {
   const { user } = useUser()
+  const { theme } = useTheme()
   const [dbUserId, setDbUserId] = useState<string | null>(null)
+  const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false)
 
   // Get the current user's database ID
   useEffect(() => {
@@ -149,10 +157,55 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
 
+  const handleProfileClick = () => {
+    if (conversation.otherUserId) {
+      setIsProfileDrawerOpen(true)
+    }
+  }
+
+  const handleStartChat = () => {
+    // This would typically navigate to the conversation
+    setIsProfileDrawerOpen(false)
+  }
+
+  const handleStartCall = () => {
+    // Implement call functionality
+    console.log('Starting call with:', conversation.otherUserId)
+    setIsProfileDrawerOpen(false)
+  }
+
+  const handleStartVideoCall = () => {
+    // Implement video call functionality
+    console.log('Starting video call with:', conversation.otherUserId)
+    setIsProfileDrawerOpen(false)
+  }
+
+  const formatLastSeen = (lastSeen: string) => {
+    try {
+      const date = new Date(lastSeen)
+      const now = new Date()
+      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
+      
+      if (diffInMinutes < 1) {
+        return { text: 'just now', type: 'recent' }
+      } else if (diffInMinutes < 60) {
+        return { text: `${diffInMinutes}m ago`, type: 'recent' }
+      } else if (diffInMinutes < 1440) { // Less than 24 hours
+        const hours = Math.floor(diffInMinutes / 60)
+        return { text: `${hours}h ago`, type: 'hours' }
+      } else {
+        // More than 24 hours - show date and time
+        return { text: format(date, 'MMM d, yyyy at HH:mm'), type: 'date' }
+      }
+    } catch (error) {
+      return { text: 'unknown', type: 'unknown' }
+    }
+  }
+
   if (!conversation.id) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Select a conversation to start chatting</p>
+        <p className={`${theme === 'dark' ? 'text-white' : 'text-muted-foreground'}`}>Select a conversation to start chatting</p>
       </div>
     )
   }
@@ -160,21 +213,95 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
   return (
     <Spotlight size={600} className="flex flex-col h-full bg-background">
       <div className="bg-card border-b border-border px-4 py-3 flex items-center space-x-3 flex-shrink-0 glass-card">
-        <img
-          src={conversation.imageUrl || '/default-avatar.png'}
-          alt={conversation.name}
-          className="w-10 h-10 rounded-full object-cover avatar-hover"
-        />
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate">{conversation.name}</h3>
-          <p className="text-xs text-muted-foreground">
-            {conversation.isOnline ? 'Online' : `Last seen ${conversation.lastSeen}`}
-          </p>
+        <div 
+          className="flex items-center space-x-3 flex-1 cursor-pointer rounded-lg p-2 transition-colors duration-200 clickable"
+          onClick={handleProfileClick}
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+        >
+          <img
+            src={conversation.imageUrl || '/default-avatar.png'}
+            alt={conversation.name}
+            className="w-10 h-10 rounded-full object-cover avatar-hover"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center space-x-2">
+              <h3 className={`font-semibold truncate ${theme === 'dark' ? 'text-white' : 'text-foreground'}`}>{conversation.name}</h3>
+              <div
+                className={`w-3 h-3 rounded-full flex-shrink-0 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+                title={isConnected ? 'Connected' : 'Disconnected'}
+              />
+            </div>
+            <div className="flex items-center space-x-1">
+              {conversation.isOnline ? (
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className={`text-xs font-medium ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
+                    Online
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1">
+                  <span className={`text-xs ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>
+                    Last seen
+                  </span>
+                  {conversation.lastSeen ? (
+                    (() => {
+                      const lastSeenInfo = formatLastSeen(conversation.lastSeen)
+                      return (
+                        <span className={`text-xs font-medium ${
+                          lastSeenInfo.type === 'recent' 
+                            ? theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                            : lastSeenInfo.type === 'hours'
+                            ? theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'
+                            : theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                        }`}>
+                          {lastSeenInfo.text}
+                        </span>
+                      )
+                    })()
+                  ) : (
+                    <span className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                      unknown
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        <div
-          className={`w-3 h-3 rounded-full flex-shrink-0 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
-          title={isConnected ? 'Connected' : 'Disconnected'}
-        />
+        
+        {/* Call Action Buttons */}
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => console.log('Video call clicked')}
+            title="Video Call"
+          >
+            <Video className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => console.log('Audio call clicked')}
+            title="Audio Call"
+          >
+            <Phone className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => console.log('Screen share clicked')}
+            title="Screen Share"
+          >
+            <Monitor className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto bg-muted/30">
@@ -216,6 +343,20 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
           dbUserId={dbUserId}
         />
       </div>
+
+      {/* User Profile Drawer */}
+      {conversation.otherUserId && (
+        <UserProfileDrawer
+          isOpen={isProfileDrawerOpen}
+          onClose={() => setIsProfileDrawerOpen(false)}
+          userId={conversation.otherUserId}
+          userName={conversation.name}
+          userImageUrl={conversation.imageUrl}
+          onStartChat={handleStartChat}
+          onStartCall={handleStartCall}
+          onStartVideoCall={handleStartVideoCall}
+        />
+      )}
     </Spotlight>
   )
 }

@@ -202,6 +202,17 @@ function ChatAppContent() {
     }
   }
 
+  const getOtherUserId = (conversation: Conversation): string | undefined => {
+    if (!dbUser || !conversation.participants) return undefined
+    
+    // Find the participant that is not the current user
+    const otherParticipant = conversation.participants.find(
+      participant => participant.id !== dbUser.id
+    )
+    
+    return otherParticipant?.id
+  }
+
   const handleContactSelect = async (contactId: string) => {
     try {
       const response = await fetch('/api/conversations', {
@@ -273,7 +284,10 @@ function ChatAppContent() {
       <div className="flex-1 flex flex-col min-w-0">
         {activePanel === 'chat' && selectedConversation && (
           <ChatWindow
-            conversation={selectedConversation as any}
+            conversation={{
+              ...selectedConversation,
+              otherUserId: getOtherUserId(selectedConversation)
+            }}
             socket={socket}
             isConnected={isConnected}
             onMessageSent={handleMessageSent}
@@ -297,7 +311,7 @@ function ChatAppContent() {
               </div>
               <h3 className={`text-xl font-semibold mb-2 transition-colors duration-300 ${
                 theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
-              }`}>Welcome to WhatsApp Clone</h3>
+              }`}>Welcome to Synapse</h3>
               <p className={`mb-4 transition-colors duration-300 ${
                 theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
               }`}>Select a conversation to start chatting</p>

@@ -41,9 +41,29 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const dbUser = await prisma.user.findUnique({
-      where: { clerkId: user.id }
-    })
+    const { searchParams } = new URL(req.url)
+    const userId = searchParams.get('userId')
+
+    let dbUser
+
+    if (userId) {
+      // If userId is provided, try to find by database ID first, then by clerkId
+      dbUser = await prisma.user.findUnique({
+        where: { id: userId }
+      })
+
+      // If not found by ID, try by clerkId
+      if (!dbUser) {
+        dbUser = await prisma.user.findUnique({
+          where: { clerkId: userId }
+        })
+      }
+    } else {
+      // If no userId provided, fetch current user's profile
+      dbUser = await prisma.user.findUnique({
+        where: { clerkId: user.id }
+      })
+    }
 
     if (!dbUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })

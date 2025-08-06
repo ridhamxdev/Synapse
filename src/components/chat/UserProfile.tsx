@@ -138,7 +138,28 @@ export function UserProfile({ onBack }: UserProfileProps) {
       if (response.ok) {
         const data = await response.json()
         setEditedProfile(prev => ({ ...prev, imageUrl: data.url }))
-        toast.success('Avatar updated successfully')
+        
+        // Immediately update the profile with the new image
+        const profileResponse = await fetch('/api/users/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: editedProfile.name,
+            bio: editedProfile.bio,
+            phone: editedProfile.phone,
+            imageUrl: data.url,
+          }),
+        })
+
+        if (profileResponse.ok) {
+          toast.success('Avatar updated successfully')
+          // Refresh user data to reflect changes
+          await refreshUser()
+        } else {
+          throw new Error('Failed to update profile with new image')
+        }
       } else {
         throw new Error('Failed to upload image')
       }
@@ -209,19 +230,19 @@ export function UserProfile({ onBack }: UserProfileProps) {
       </div>
 
       {/* Scrollable Content */}
-      <ScrollArea className="flex-1">
-        <div className="p-8 space-y-8">
+      <ScrollArea className="flex-1 h-full">
+        <div className="p-8 pb-32 space-y-8 min-h-full">
           {/* Avatar Section */}
           <div className="flex flex-col items-center space-y-4">
-            <div className="relative group">
-              <Avatar 
-                className={`h-28 w-28 cursor-pointer transition-all duration-300 shadow-xl border-4 ${
-                  theme === 'dark' ? 'border-slate-800' : 'border-white'
-                } ${
-                  isEditing ? 'hover:scale-105 hover:shadow-2xl' : ''
-                }`}
-                onClick={handleAvatarClick}
-              >
+                         <div className="relative group">
+               <Avatar 
+                 className={`h-28 w-28 transition-all duration-300 shadow-xl border-4 ${
+                   theme === 'dark' ? 'border-slate-800' : 'border-white'
+                 } ${
+                   isEditing ? 'cursor-pointer hover:scale-105 hover:shadow-2xl' : 'cursor-default'
+                 }`}
+                 onClick={handleAvatarClick}
+               >
                 <AvatarImage src={editedProfile.imageUrl} className="object-cover" />
                 <AvatarFallback className={`text-3xl font-bold ${
                   theme === 'dark' 
@@ -232,13 +253,17 @@ export function UserProfile({ onBack }: UserProfileProps) {
                 </AvatarFallback>
               </Avatar>
               
-              {isEditing && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
-                  <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
-                    <Camera className="w-7 h-7 text-white" />
-                  </div>
-                </div>
-              )}
+                             {isEditing && (
+                 <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
+                   <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+                     {isLoading ? (
+                       <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                     ) : (
+                       <Camera className="w-7 h-7 text-white" />
+                     )}
+                   </div>
+                 </div>
+               )}
               
               <input
                 ref={fileInputRef}
@@ -473,7 +498,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
 
           {/* Edit Actions */}
           {isEditing && (
-            <div className="flex space-x-4 pt-4">
+            <div className="flex space-x-4 pt-6">
               <Button 
                 onClick={handleSave} 
                 disabled={isLoading}

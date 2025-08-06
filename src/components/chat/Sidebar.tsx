@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ConversationList } from '@/components/chat/ConversationList'
 import { SignOutButton } from '@/components/auth/SignOutButton'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { DarkModeToggle } from '@/components/ui/DarkModeToggle'
 import { MessageSearch } from '@/components/chat/MessageSearch'
 import {
   DropdownMenu,
@@ -122,10 +122,10 @@ export function Sidebar({
             </Avatar>
             <div className="flex-1 min-w-0">
               <h3 className={`font-semibold truncate transition-colors duration-300 ${
-                theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+                theme === 'dark' ? 'text-white' : 'text-slate-900'
               }`}>{dbUser?.name || user?.fullName}</h3>
               <p className={`text-xs transition-colors duration-300 ${
-                theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                theme === 'dark' ? 'text-white' : 'text-slate-500'
               }`}>
                 {isConnected ? 'Online' : 'Offline'}
               </p>
@@ -139,7 +139,7 @@ export function Sidebar({
                   theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-100'
                 }`}>
                   <svg className={`w-4 h-4 ${
-                    theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
+                    theme === 'dark' ? 'text-white' : 'text-slate-600'
                   }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                   </svg>
@@ -152,7 +152,7 @@ export function Sidebar({
                 sideOffset={4}
                 className={`w-56 z-[9999] shadow-2xl border dropdown-menu-content transition-colors duration-300 ${
                   theme === 'dark' 
-                    ? 'bg-slate-800 border-slate-700 text-slate-100' 
+                    ? 'bg-slate-800 border-slate-700 text-white' 
                     : 'bg-white border-slate-200 text-slate-900'
                 }`}
                 style={{
@@ -173,13 +173,7 @@ export function Sidebar({
                     Profile
                   </span>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer p-0">
-                  <div className="w-full px-2 py-1.5">
-                    <ThemeToggle showText={true} className={`w-full justify-start transition-colors duration-200 ${
-                      theme === 'dark' ? 'hover:bg-slate-700 focus:bg-slate-700' : 'hover:bg-slate-100 focus:bg-slate-100'
-                    }`} variant="ghost" />
-                  </div>
-                </DropdownMenuItem>
+
                 <DropdownMenuItem onClick={() => setShowSearch(true)} className={`cursor-pointer transition-colors duration-200 ${
                   theme === 'dark' ? 'hover:bg-slate-700 focus:bg-slate-700' : 'hover:bg-slate-100 focus:bg-slate-100'
                 }`}>
@@ -213,8 +207,8 @@ export function Sidebar({
             onClick={() => onPanelChange('chat')}
             className={`flex-1 transition-all duration-200 ${
               activePanel === 'chat' 
-                ? (theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600')
-                : (theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-100')
+                ? (theme === 'dark' ? 'bg-gray-300 hover:bg-gray-300 text-black' : 'bg-gray-300 hover:bg-gray-300')
+                : (theme === 'dark' ? 'hover:bg-slate-700 text-white' : 'hover:bg-slate-100 text-black')
             }`}
           >
             Chats
@@ -225,8 +219,8 @@ export function Sidebar({
             onClick={() => onPanelChange('contacts')}
             className={`flex-1 transition-all duration-200 ${
               activePanel === 'contacts' 
-                ? (theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600')
-                : (theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-100')
+                ? (theme === 'dark' ? 'bg-gray-300 hover:bg-gray-300 text-black' : 'bg-gray-300 hover:bg-gray-300')
+                : (theme === 'dark' ? 'hover:bg-slate-700 text-white' : 'hover:bg-slate-100 text-black')
             }`}
           >
             Contacts
@@ -237,8 +231,8 @@ export function Sidebar({
             onClick={() => onPanelChange('profile')}
             className={`flex-1 transition-all duration-200 ${
               activePanel === 'profile' 
-                ? (theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600')
-                : (theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-100')
+                ? (theme === 'dark' ? 'bg-gray-300 hover:bg-gray-300 text-black' : 'bg-gray-300 hover:bg-gray-300')
+                : (theme === 'dark' ? 'hover:bg-slate-700 text-white' : 'hover:bg-slate-100 text-black')
             }`}
           >
             Profile
@@ -256,12 +250,12 @@ export function Sidebar({
             onChange={(e) => setSearchQuery(e.target.value)}
             className={`pl-10 transition-colors duration-300 ${
               theme === 'dark' 
-                ? 'bg-slate-700 border-slate-600 text-slate-100 placeholder-slate-400' 
+                ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400' 
                 : 'bg-white border-slate-300 text-slate-900 placeholder-slate-500'
             }`}
           />
           <svg className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-300 ${
-            theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+            theme === 'dark' ? 'text-white' : 'text-slate-500'
           }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -284,6 +278,15 @@ export function Sidebar({
           />
         )}
       </ScrollArea>
+
+      {/* Dark Mode Toggle at bottom */}
+      <div className={`p-4 border-t flex-shrink-0 transition-colors duration-300 ${
+        theme === 'dark' ? 'border-slate-700' : 'border-slate-200'
+      }`}>
+        <div className="flex items-center justify-center">
+          <DarkModeToggle />
+        </div>
+      </div>
 
       {/* Search modal */}
       {showSearch && (

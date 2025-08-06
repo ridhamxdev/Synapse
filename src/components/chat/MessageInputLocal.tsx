@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
+import { useTheme } from '@/contexts/ThemeContext'
 import { 
   Send, 
   Paperclip, 
@@ -37,6 +38,7 @@ export function MessageInputLocal({
   dbUserId
 }: MessageInputProps) {
   const { user } = useUser()
+  const { theme } = useTheme()
   const [message, setMessage] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
@@ -308,17 +310,17 @@ export function MessageInputLocal({
     <Card className="p-4 border-t">
       {replyTo && (
         <div className="mb-3 p-2 bg-muted rounded-lg relative">
-          <div className="text-sm text-muted-foreground">
+          <div className={`text-sm ${theme === 'dark' ? 'text-white' : 'text-muted-foreground'}`}>
             Replying to: {replyTo.content.substring(0, 50)}...
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute top-1 right-1 h-6 w-6 p-0"
-            onClick={() => setReplyTo(null)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+                     <Button
+             variant="ghost"
+             size="sm"
+             className="absolute top-1 right-1 h-6 w-6 p-0"
+             onClick={() => setReplyTo(null)}
+           >
+             <X className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
+           </Button>
         </div>
       )}
 
@@ -326,7 +328,7 @@ export function MessageInputLocal({
         <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium">Recording...</span>
+            <span className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>Recording...</span>
             <Badge variant="secondary">{formatRecordingTime(recordingTime)}</Badge>
           </div>
           <Button
@@ -351,20 +353,22 @@ export function MessageInputLocal({
             }}
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
-            className="min-h-[40px] max-h-[120px] resize-none pr-20"
+            className={`min-h-[40px] max-h-[120px] resize-none pr-20 ${
+              theme === 'dark' ? 'text-white placeholder-white/70' : ''
+            }`}
             disabled={disabled || isUploading}
           />
           
           <div className="absolute bottom-2 right-2 flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              disabled={disabled || isUploading}
-            >
-              <Smile className="h-4 w-4" />
-            </Button>
+                         <Button
+               variant="ghost"
+               size="sm"
+               className="h-8 w-8 p-0"
+               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+               disabled={disabled || isUploading}
+             >
+               <Smile className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
+             </Button>
           </div>
         </div>
 
@@ -386,47 +390,47 @@ export function MessageInputLocal({
             disabled={disabled || isUploading}
           />
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-10 w-10 p-0"
-            onClick={() => imageInputRef.current?.click()}
-            disabled={disabled || isUploading}
-          >
-            <ImageIcon className="h-4 w-4" />
-          </Button>
+                     <Button
+             variant="ghost"
+             size="sm"
+             className="h-10 w-10 p-0"
+             onClick={() => imageInputRef.current?.click()}
+             disabled={disabled || isUploading}
+           >
+             <ImageIcon className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
+           </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-10 w-10 p-0"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={disabled || isUploading}
-          >
-            <FileText className="h-4 w-4" />
-          </Button>
+                     <Button
+             variant="ghost"
+             size="sm"
+             className="h-10 w-10 p-0"
+             onClick={() => fileInputRef.current?.click()}
+             disabled={disabled || isUploading}
+           >
+             <FileText className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
+           </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-10 w-10 p-0"
-            onClick={isRecording ? stopRecording : startRecording}
-            disabled={disabled || isUploading}
-          >
-            {isRecording ? (
-              <MicOff className="h-4 w-4 text-red-500" />
-            ) : (
-              <Mic className="h-4 w-4" />
-            )}
-          </Button>
+                     <Button
+             variant="ghost"
+             size="sm"
+             className="h-10 w-10 p-0"
+             onClick={isRecording ? stopRecording : startRecording}
+             disabled={disabled || isUploading}
+           >
+             {isRecording ? (
+               <MicOff className="h-4 w-4 text-red-500" />
+             ) : (
+               <Mic className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
+             )}
+           </Button>
 
-          <Button
-            onClick={sendMessage}
-            disabled={!message.trim() || disabled || isUploading}
-            className="h-10 px-4"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+                     <Button
+             onClick={sendMessage}
+             disabled={!message.trim() || disabled || isUploading}
+             className="h-10 px-4"
+           >
+             <Send className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
+           </Button>
         </div>
       </div>
 
@@ -437,7 +441,7 @@ export function MessageInputLocal({
       )}
 
       {isUploading && (
-        <div className="mt-2 text-sm text-muted-foreground">
+        <div className={`mt-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-muted-foreground'}`}>
           Uploading...
         </div>
       )}

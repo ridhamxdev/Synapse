@@ -4,12 +4,16 @@ import React, { useRef, useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { SignInButton, SignUpButton } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
+import { AnimataButton } from '@/components/ui/animata-button'
+import RippleButton from '@/components/ui/ripple-button'
 import { Sparkles } from "@/components/ui/sparkles"
 import { useRouter } from 'next/navigation'
 import { 
   MessageCircle, 
   ArrowRight,
-  Plus
+  Plus,
+  Rocket,
+  Sparkles as SparklesIcon
 } from 'lucide-react'
 
 export function SynapseLandingPage() {
@@ -217,31 +221,31 @@ export function SynapseLandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16"
+              className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16"
             >
               <SignUpButton 
                 mode="redirect"
                 fallbackRedirectUrl="/chat"
               >
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-primary to-primary/80 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                <AnimataButton
+                  variant="gradient"
+                  size="xl"
+                  icon={<Rocket className="h-6 w-6" />}
+                  iconPosition="left"
+                  className="min-w-[200px]"
                 >
-                  <span className="relative z-10">Get Started Free</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </motion.button>
+                  Get Started Free
+                </AnimataButton>
               </SignUpButton>
               
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <RippleButton
+                variant="primary"
+                size="xl"
                 onClick={() => router.push('/chat')}
-                className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white border-2 border-white/20 rounded-full hover:border-primary/50 transition-all duration-300 backdrop-blur-sm"
+                className="min-w-[200px] shadow-lg hover:shadow-xl"
               >
-                <span className="relative z-10">Try Demo</span>
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </motion.button>
+                Try Demo
+              </RippleButton>
             </motion.div>
           </div>
         </div>
@@ -390,24 +394,30 @@ export function SynapseLandingPage() {
               Join millions of users who trust Synapse for their communication needs
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <SignUpButton 
                 mode="redirect"
                 fallbackRedirectUrl="/chat"
               >
-                <Button variant="gradient" size="lg" className="px-8 py-4 text-lg btn-animate">
+                <AnimataButton
+                  variant="primary"
+                  size="lg"
+                  icon={<MessageCircle className="h-5 w-5" />}
+                  iconPosition="left"
+                  className="min-w-[180px]"
+                >
                   Start Messaging Now
-                </Button>
+                </AnimataButton>
               </SignUpButton>
               
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="px-8 py-4 text-lg border-white/20 text-white hover:border-primary"
+              <RippleButton
+                variant="primary"
+                size="lg"
                 onClick={() => router.push('/chat')}
+                className="min-w-[180px] shadow-lg hover:shadow-xl"
               >
                 Try Demo
-              </Button>
+              </RippleButton>
             </div>
           </motion.div>
         </div>
