@@ -5,8 +5,8 @@ import { ProfileProvider } from '@/contexts/ProfileContext'
 import { Toaster } from '@/components/ui/sonner'
 
 export const metadata = {
-  title: 'ChatLi',
-  description: 'A real-time messaging app',
+  title: 'Synapse',
+  description: 'A real-time messaging app using Next.js, Shadcn, Clerk,Sockets and SQL',
 }
 
 export default function RootLayout({

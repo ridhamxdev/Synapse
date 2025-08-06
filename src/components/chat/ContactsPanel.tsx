@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
+import { useTheme } from '@/contexts/ThemeContext'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,6 +35,7 @@ interface User {
 
 export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
   const { user } = useUser()
+  const { theme } = useTheme()
   const [users, setUsers] = useState<User[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(false)
@@ -135,23 +137,37 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-background">
-      <div className="bg-card border-b border-border p-6">
+    <div className={`flex flex-col h-full transition-colors duration-300 ${
+      theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'
+    }`}>
+      <div className={`border-b p-6 transition-colors duration-300 ${
+        theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+      }`}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Contacts</h2>
-          <Button size="sm" variant="outline">
+          <h2 className={`text-xl font-semibold transition-colors duration-300 ${
+            theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+          }`}>Contacts</h2>
+          <Button size="sm" variant="outline" className={`transition-colors duration-200 ${
+            theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' : 'border-slate-300 hover:bg-slate-100'
+          }`}>
             <Users className="h-4 w-4 mr-2" />
             New Group
           </Button>
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 ${
+            theme === 'dark' ? 'text-slate-400' : 'text-gray-400'
+          }`} />
           <Input
             placeholder="Search contacts by name, email, or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className={`pl-10 transition-colors duration-300 ${
+              theme === 'dark' 
+                ? 'bg-slate-700 border-slate-600 text-slate-100 placeholder-slate-400' 
+                : 'bg-white border-slate-300 text-slate-900 placeholder-slate-500'
+            }`}
           />
         </div>
       </div>
@@ -162,17 +178,25 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="flex items-center space-x-3 animate-pulse">
-                  <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+                  <div className={`w-12 h-12 rounded-full transition-colors duration-300 ${
+                    theme === 'dark' ? 'bg-slate-600' : 'bg-gray-300'
+                  }`}></div>
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                    <div className={`h-4 rounded w-3/4 transition-colors duration-300 ${
+                      theme === 'dark' ? 'bg-slate-600' : 'bg-gray-300'
+                    }`}></div>
+                    <div className={`h-3 rounded w-1/2 transition-colors duration-300 ${
+                      theme === 'dark' ? 'bg-slate-600' : 'bg-gray-300'
+                    }`}></div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         ) : users.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+          <div className={`flex flex-col items-center justify-center h-64 transition-colors duration-300 ${
+            theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+          }`}>
             <Users className="h-12 w-12 mb-4 opacity-50" />
             <p className="text-center">
               {searchQuery ? 'No contacts found' : 'No contacts available'}
@@ -182,11 +206,15 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div className={`divide-y transition-colors duration-300 ${
+            theme === 'dark' ? 'divide-slate-700' : 'divide-slate-200'
+          }`}>
             {users.map((foundUser) => (
                              <div
                  key={foundUser.id}
-                 className="p-4 hover:bg-accent transition-all duration-200 hover-lift"
+                 className={`p-4 transition-all duration-200 hover-lift ${
+                   theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-100'
+                 }`}
                >
                 <div className="flex items-center space-x-4">
                   <div className="relative flex-shrink-0">
@@ -198,13 +226,17 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
                     </Avatar>
                     
                     {foundUser.isOnline && (
-                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></div>
+                      <div className={`absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 rounded-full transition-colors duration-300 ${
+                        theme === 'dark' ? 'border-slate-800' : 'border-white'
+                      }`}></div>
                     )}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-medium truncate text-foreground">{foundUser.name}</h3>
+                      <h3 className={`font-medium truncate transition-colors duration-300 ${
+                        theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+                      }`}>{foundUser.name}</h3>
                       <div className="flex items-center space-x-1">
                         {foundUser.isOnline && (
                           <Badge variant="outline" className="text-xs text-green-600">
@@ -214,7 +246,9 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
                       </div>
                     </div>
                     
-                    <p className="text-sm text-muted-foreground truncate">
+                    <p className={`text-sm truncate transition-colors duration-300 ${
+                      theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                    }`}>
                       {foundUser.bio || foundUser.email}
                     </p>
                     

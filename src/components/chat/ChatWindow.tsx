@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs'
 import { MessageInputLocal } from './MessageInputLocal'
 import MessageBubble from './MessageBubble'
 import { TypingIndicator } from './TypingIndicator'
+import { Spotlight } from '@/components/ui/spotlight'
 
 interface Message {
   id: string
@@ -157,12 +158,12 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
   }
 
   return (
-    <div className="flex flex-col h-full bg-background">
-      <div className="bg-card border-b border-border px-4 py-3 flex items-center space-x-3 flex-shrink-0">
+    <Spotlight size={600} className="flex flex-col h-full bg-background">
+      <div className="bg-card border-b border-border px-4 py-3 flex items-center space-x-3 flex-shrink-0 glass-card">
         <img
           src={conversation.imageUrl || '/default-avatar.png'}
           alt={conversation.name}
-          className="w-10 h-10 rounded-full object-cover"
+          className="w-10 h-10 rounded-full object-cover avatar-hover"
         />
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-foreground truncate">{conversation.name}</h3>
@@ -215,6 +216,6 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
           dbUserId={dbUserId}
         />
       </div>
-    </div>
+    </Spotlight>
   )
 }

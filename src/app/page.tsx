@@ -1,11 +1,13 @@
-import { currentUser } from '@clerk/nextjs/server'
+import { SynapseLandingPage } from '@/components/Landing/SynapseLandingPage'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import { LandingPage } from '@/components/Landing/LandingPage'
 
 export default async function HomePage() {
-  const user = await currentUser()
-  if (user) {
+  const { userId } = await auth()
+  
+  if (userId) {
     redirect('/chat')
   }
-  return <LandingPage />
+
+  return <SynapseLandingPage />
 }

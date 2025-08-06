@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useUserSync } from '@/hooks/useUserSync'
+import { useTheme } from '@/contexts/ThemeContext'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,6 +30,7 @@ interface ProfileData {
 export function UserProfile({ onBack }: UserProfileProps) {
   const { user } = useUser()
   const { refreshUser } = useUserSync()
+  const { theme } = useTheme()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -161,27 +163,43 @@ export function UserProfile({ onBack }: UserProfileProps) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className={`h-full flex flex-col transition-colors duration-300 ${
+      theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'
+    }`}>
       {/* Header */}
-      <div className="bg-card/50 backdrop-blur-sm border-b border-border/50 p-4 flex-shrink-0">
+      <div className={`backdrop-blur-sm border-b p-4 flex-shrink-0 transition-colors duration-300 ${
+        theme === 'dark' 
+          ? 'bg-slate-800/80 border-slate-700/50' 
+          : 'bg-white/80 border-slate-200/50'
+      }`}>
         <div className="flex items-center justify-between">
           {onBack && (
             <Button
               variant="ghost"
               size="sm"
               onClick={onBack}
-              className="text-muted-foreground hover:bg-accent p-2 rounded-full transition-all duration-200"
+              className={`p-2 rounded-full transition-all duration-200 ${
+                theme === 'dark'
+                  ? 'text-slate-300 hover:bg-slate-700'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
             >
               ← Back
             </Button>
           )}
-          <h2 className="text-xl font-semibold text-foreground">Profile</h2>
+          <h2 className={`text-xl font-semibold transition-colors duration-300 ${
+            theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+          }`}>Profile</h2>
           {!isEditing && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsEditing(true)}
-              className="text-muted-foreground hover:bg-accent px-3 py-1 rounded-full transition-all duration-200 flex items-center gap-2"
+              className={`px-3 py-1 rounded-full transition-all duration-200 flex items-center gap-2 ${
+                theme === 'dark'
+                  ? 'text-slate-300 hover:bg-slate-700'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
             >
               <Edit className="w-4 h-4" />
               Edit
@@ -197,13 +215,19 @@ export function UserProfile({ onBack }: UserProfileProps) {
           <div className="flex flex-col items-center space-y-4">
             <div className="relative group">
               <Avatar 
-                className={`h-28 w-28 cursor-pointer transition-all duration-300 shadow-xl border-4 border-background ${
+                className={`h-28 w-28 cursor-pointer transition-all duration-300 shadow-xl border-4 ${
+                  theme === 'dark' ? 'border-slate-800' : 'border-white'
+                } ${
                   isEditing ? 'hover:scale-105 hover:shadow-2xl' : ''
                 }`}
                 onClick={handleAvatarClick}
               >
                 <AvatarImage src={editedProfile.imageUrl} className="object-cover" />
-                <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-primary to-primary/70 text-primary-foreground">
+                <AvatarFallback className={`text-3xl font-bold ${
+                  theme === 'dark' 
+                    ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
+                    : 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
+                }`}>
                   {editedProfile.name?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
@@ -227,7 +251,9 @@ export function UserProfile({ onBack }: UserProfileProps) {
             
             {isEditing && (
               <div className="text-center">
-                <p className="text-sm text-muted-foreground">
+                <p className={`text-sm transition-colors duration-300 ${
+                  theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                }`}>
                   Click avatar to upload image (JPG, PNG, GIF up to 5MB)
                 </p>
               </div>
@@ -239,10 +265,16 @@ export function UserProfile({ onBack }: UserProfileProps) {
             {/* Name Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-xl">
-                  <User className="w-5 h-5 text-primary" />
+                <div className={`p-2 rounded-xl ${
+                  theme === 'dark' ? 'bg-blue-500/20' : 'bg-blue-500/10'
+                }`}>
+                  <User className={`w-5 h-5 ${
+                    theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                  }`} />
                 </div>
-                <Label htmlFor="name" className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                <Label htmlFor="name" className={`text-sm font-semibold uppercase tracking-wide transition-colors duration-300 ${
+                  theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
+                }`}>
                   Display Name
                 </Label>
               </div>
@@ -252,26 +284,42 @@ export function UserProfile({ onBack }: UserProfileProps) {
                   value={editedProfile.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Enter your display name"
-                  className="text-lg font-medium border-0 bg-card/50 backdrop-blur-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20"
+                  className={`text-lg font-medium border-0 backdrop-blur-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500/20 transition-colors duration-300 ${
+                    theme === 'dark' 
+                      ? 'bg-slate-800/50 text-slate-100 placeholder-slate-400' 
+                      : 'bg-white/50 text-slate-900 placeholder-slate-500'
+                  }`}
                 />
               ) : (
-                <p className="text-2xl font-bold text-foreground">{editedProfile.name}</p>
+                <p className={`text-2xl font-bold transition-colors duration-300 ${
+                  theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+                }`}>{editedProfile.name}</p>
               )}
             </div>
 
             {/* Email Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 rounded-xl">
-                  <Mail className="w-5 h-5 text-blue-500" />
+                <div className={`p-2 rounded-xl ${
+                  theme === 'dark' ? 'bg-emerald-500/20' : 'bg-emerald-500/10'
+                }`}>
+                  <Mail className={`w-5 h-5 ${
+                    theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'
+                  }`} />
                 </div>
-                <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                <Label className={`text-sm font-semibold uppercase tracking-wide transition-colors duration-300 ${
+                  theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
+                }`}>
                   Email Address
                 </Label>
               </div>
               <div className="space-y-2">
-                <p className="text-lg font-medium text-foreground">{editedProfile.email}</p>
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <p className={`text-lg font-medium transition-colors duration-300 ${
+                  theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+                }`}>{editedProfile.email}</p>
+                <p className={`text-sm flex items-center gap-2 transition-colors duration-300 ${
+                  theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                }`}>
                   <Info className="w-4 h-4" />
                   Email cannot be changed for security reasons
                 </p>
@@ -281,10 +329,16 @@ export function UserProfile({ onBack }: UserProfileProps) {
             {/* Phone Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500/10 rounded-xl">
-                  <Phone className="w-5 h-5 text-green-500" />
+                <div className={`p-2 rounded-xl ${
+                  theme === 'dark' ? 'bg-orange-500/20' : 'bg-orange-500/10'
+                }`}>
+                  <Phone className={`w-5 h-5 ${
+                    theme === 'dark' ? 'text-orange-400' : 'text-orange-600'
+                  }`} />
                 </div>
-                <Label htmlFor="phone" className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                <Label htmlFor="phone" className={`text-sm font-semibold uppercase tracking-wide transition-colors duration-300 ${
+                  theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
+                }`}>
                   Phone Number
                 </Label>
               </div>
@@ -294,12 +348,20 @@ export function UserProfile({ onBack }: UserProfileProps) {
                   value={editedProfile.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="Enter your phone number"
-                  className="text-lg font-medium border-0 bg-card/50 backdrop-blur-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500/20"
+                  className={`text-lg font-medium border-0 backdrop-blur-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500/20 transition-colors duration-300 ${
+                    theme === 'dark' 
+                      ? 'bg-slate-800/50 text-slate-100 placeholder-slate-400' 
+                      : 'bg-white/50 text-slate-900 placeholder-slate-500'
+                  }`}
                 />
               ) : (
-                <p className="text-lg font-medium text-foreground">
+                <p className={`text-lg font-medium transition-colors duration-300 ${
+                  theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+                }`}>
                   {editedProfile.phone || (
-                    <span className="text-muted-foreground italic">Not set</span>
+                    <span className={`italic transition-colors duration-300 ${
+                      theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                    }`}>Not set</span>
                   )}
                 </p>
               )}
@@ -308,10 +370,16 @@ export function UserProfile({ onBack }: UserProfileProps) {
             {/* Bio Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-500/10 rounded-xl">
-                  <Info className="w-5 h-5 text-purple-500" />
+                <div className={`p-2 rounded-xl ${
+                  theme === 'dark' ? 'bg-purple-500/20' : 'bg-purple-500/10'
+                }`}>
+                  <Info className={`w-5 h-5 ${
+                    theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
+                  }`} />
                 </div>
-                <Label htmlFor="bio" className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                <Label htmlFor="bio" className={`text-sm font-semibold uppercase tracking-wide transition-colors duration-300 ${
+                  theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
+                }`}>
                   About Me
                 </Label>
               </div>
@@ -322,45 +390,75 @@ export function UserProfile({ onBack }: UserProfileProps) {
                     value={editedProfile.bio}
                     onChange={(e) => handleInputChange('bio', e.target.value)}
                     placeholder="Tell us about yourself..."
-                    className="text-lg min-h-[100px] resize-none border-0 bg-card/50 backdrop-blur-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500/20"
+                    className={`text-lg min-h-[100px] resize-none border-0 backdrop-blur-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500/20 transition-colors duration-300 ${
+                      theme === 'dark' 
+                        ? 'bg-slate-800/50 text-slate-100 placeholder-slate-400' 
+                        : 'bg-white/50 text-slate-900 placeholder-slate-500'
+                    }`}
                     maxLength={150}
                   />
-                  <div className="flex justify-between items-center text-sm text-muted-foreground">
+                  <div className={`flex justify-between items-center text-sm transition-colors duration-300 ${
+                    theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                  }`}>
                     <span>Share a bit about yourself</span>
                     <span className="font-mono">{editedProfile.bio.length}/150</span>
                   </div>
                 </div>
               ) : (
-                <p className="text-lg text-muted-foreground leading-relaxed">{editedProfile.bio}</p>
+                <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+                  theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+                }`}>{editedProfile.bio}</p>
               )}
             </div>
 
             {/* Account Information Section */}
             <div className="space-y-6">
-              <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
-                <div className="p-2 bg-muted rounded-xl">
-                  <Hash className="w-5 h-5 text-muted-foreground" />
+              <h3 className={`text-xl font-bold flex items-center gap-3 transition-colors duration-300 ${
+                theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+              }`}>
+                <div className={`p-2 rounded-xl ${
+                  theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'
+                }`}>
+                  <Hash className={`w-5 h-5 ${
+                    theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                  }`} />
                 </div>
                 Account Information
               </h3>
               
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  <Label className={`text-sm font-semibold uppercase tracking-wide transition-colors duration-300 ${
+                    theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
+                  }`}>
                     User ID
                   </Label>
-                  <p className="text-sm font-mono text-muted-foreground bg-muted/50 backdrop-blur-sm p-3 rounded-xl">
+                  <p className={`text-sm font-mono backdrop-blur-sm p-3 rounded-xl transition-colors duration-300 ${
+                    theme === 'dark' 
+                      ? 'text-slate-400 bg-slate-800/50' 
+                      : 'text-slate-600 bg-slate-100/50'
+                  }`}>
                     {user?.id}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  <Label className={`text-sm font-semibold uppercase tracking-wide transition-colors duration-300 ${
+                    theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
+                  }`}>
                     Member Since
                   </Label>
-                  <div className="flex items-center gap-3 bg-muted/50 backdrop-blur-sm p-3 rounded-xl">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
+                  <div className={`flex items-center gap-3 backdrop-blur-sm p-3 rounded-xl transition-colors duration-300 ${
+                    theme === 'dark' 
+                      ? 'bg-slate-800/50' 
+                      : 'bg-slate-100/50'
+                  }`}>
+                    <Calendar className={`w-4 h-4 ${
+                      theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                    }`} />
+                    <p className={`text-sm transition-colors duration-300 ${
+                      theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                    }`}>
                       {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
@@ -379,10 +477,10 @@ export function UserProfile({ onBack }: UserProfileProps) {
               <Button 
                 onClick={handleSave} 
                 disabled={isLoading}
-                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                 ) : (
                   <Save className="w-5 h-5 mr-2" />
                 )}
@@ -392,7 +490,11 @@ export function UserProfile({ onBack }: UserProfileProps) {
                 variant="outline" 
                 onClick={handleCancel}
                 disabled={isLoading}
-                className="flex-1 border-border hover:bg-accent font-semibold py-3 rounded-xl transition-all duration-200"
+                className={`flex-1 font-semibold py-3 rounded-xl transition-all duration-200 ${
+                  theme === 'dark'
+                    ? 'border-slate-700 hover:bg-slate-800 text-slate-300'
+                    : 'border-slate-200 hover:bg-slate-100 text-slate-700'
+                }`}
               >
                 <X className="w-5 h-5 mr-2" />
                 Cancel
@@ -405,7 +507,11 @@ export function UserProfile({ onBack }: UserProfileProps) {
             <SignOutButton 
               variant="outline" 
               size="lg"
-              className="w-full text-destructive border-destructive/20 hover:bg-destructive/10 hover:border-destructive/30 font-semibold py-3 rounded-xl transition-all duration-200"
+              className={`w-full font-semibold py-3 rounded-xl transition-all duration-200 ${
+                theme === 'dark'
+                  ? 'text-red-400 border-red-800 hover:bg-red-900/20 hover:border-red-700'
+                  : 'text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300'
+              }`}
             />
           </div>
         </div>

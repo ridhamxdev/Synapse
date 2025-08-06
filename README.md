@@ -1,19 +1,28 @@
-# WhatsApp Clone - Full Stack Real-Time Chat Application
+# Synapse - Next Generation Messaging Platform
 
-A modern, feature-rich WhatsApp clone built with Next.js, TypeScript, and real-time messaging capabilities. This project demonstrates advanced web development techniques including real-time communication, file uploads, voice messaging, and modern UI/UX design.
+A modern, feature-rich messaging platform built with Next.js, TypeScript, and real-time messaging capabilities. Synapse combines the power of WhatsApp-style communication with cutting-edge UI/UX design inspired by Aceternity UI.
 
-![WhatsApp Clone](https://img.shields.io/badge/Next.js-15.4.3-black?style=for-the-badge&logo=next.js)
+![Synapse](https://img.shields.io/badge/Synapse-Next%20Generation%20Messaging-blue?style=for-the-badge&logo=message-circle)
+![Next.js](https://img.shields.io/badge/Next.js-15.4.3-black?style=for-the-badge&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)
 ![React](https://img.shields.io/badge/React-19.1.0-blue?style=for-the-badge&logo=react)
 ![Socket.io](https://img.shields.io/badge/Socket.io-4.8.1-black?style=for-the-badge&logo=socket.io)
 ![Prisma](https://img.shields.io/badge/Prisma-6.12.0-black?style=for-the-badge&logo=prisma)
 ![Clerk](https://img.shields.io/badge/Clerk-Auth-blue?style=for-the-badge&logo=clerk)
+![Framer Motion](https://img.shields.io/badge/Framer%20Motion-Animation-green?style=for-the-badge&logo=framer)
 
 ## 🚀 Live Demo
 
 [View Live Demo](https://your-demo-link.com) *(Coming Soon)*
 
 ## ✨ Features
+
+### 🎨 **Synapse Branding & Design**
+- **Professional Landing Page** - Interactive Synapse branding with hover effects
+- **WhatsApp-Style Colors** - Official green gradient (#25D366, #128C7E, #075E54)
+- **Aceternity UI Inspiration** - Modern glassmorphism and gradient effects
+- **Interactive Animations** - Mouse-following effects and smooth transitions
+- **Responsive Design** - Mobile-first approach with modern aesthetics
 
 ### 🔐 Authentication & User Management
 - **Clerk Authentication** - Secure user registration and login
@@ -27,6 +36,7 @@ A modern, feature-rich WhatsApp clone built with Next.js, TypeScript, and real-t
 - **Typing Indicators** - Real-time typing status
 - **Message History** - Persistent message storage
 - **Conversation Management** - Create and manage chat conversations
+- **Enhanced Message Bubbles** - Configurable styling for sender/receiver messages
 
 ### 📱 Media Sharing
 - **Image Uploads** - Drag & drop image sharing
@@ -44,11 +54,17 @@ A modern, feature-rich WhatsApp clone built with Next.js, TypeScript, and real-t
 - **Duration Display** - Accurate audio length display
 - **Fallback Systems** - Robust error handling
 
-### 🎨 Modern UI/UX
+### 🎨 Modern UI/UX with Aceternity UI
+- **Glassmorphism Effects** - Modern glass-like components
+- **Gradient Animations** - Smooth gradient transitions
+- **Hover Effects** - Interactive element animations
+- **Floating Elements** - Animated background particles
+- **Sparkles & Spotlight** - Aceternity UI-inspired effects
+- **Tracing Beam** - Animated content reveals
 - **Responsive Design** - Mobile-first responsive layout
 - **Dark/Light Theme** - Theme switching capability
-- **Modern Components** - Radix UI component library
-- **Smooth Animations** - CSS transitions and animations
+- **Modern Components** - Enhanced Radix UI component library
+- **Smooth Animations** - Framer Motion-powered animations
 - **Loading States** - Elegant loading indicators
 - **Error Handling** - User-friendly error messages
 
@@ -59,6 +75,7 @@ A modern, feature-rich WhatsApp clone built with Next.js, TypeScript, and real-t
 - **API Routes** - RESTful API endpoints
 - **Middleware** - Route protection and validation
 - **Environment Management** - Secure configuration
+- **Framer Motion** - Advanced animations and interactions
 
 ## 🛠️ Tech Stack
 
@@ -67,6 +84,7 @@ A modern, feature-rich WhatsApp clone built with Next.js, TypeScript, and real-t
 - **React 19.1.0** - UI library
 - **TypeScript 5.0** - Type safety
 - **Tailwind CSS 4** - Utility-first CSS framework
+- **Framer Motion** - Animation library
 - **Radix UI** - Accessible component primitives
 - **Lucide React** - Icon library
 - **Emoji Picker** - Emoji selection component
@@ -86,11 +104,11 @@ A modern, feature-rich WhatsApp clone built with Next.js, TypeScript, and real-t
 ## 📁 Project Structure
 
 ```
-whatsapp-clone-full/
+synapse/
 ├── 📁 src/
 │   ├── 📁 app/                          # Next.js App Router
 │   │   ├── 📁 (main)/                   # Main layout group
-│   │   │   └── 📄 page.tsx              # Landing page
+│   │   │   └── 📄 page.tsx              # Synapse landing page
 │   │   ├── 📁 api/                      # API routes
 │   │   │   ├── 📁 conversations/        # Conversation endpoints
 │   │   │   │   ├── 📁 [id]/             # Dynamic conversation routes
@@ -104,13 +122,12 @@ whatsapp-clone-full/
 │   │   │   │   │   │   └── 📄 route.ts
 │   │   │   │   │   └── 📄 route.ts      # Conversation management
 │   │   │   │   └── 📄 route.ts          # Conversation listing
-│   │   │   ├── 📁 debug/                # Debug endpoints
-│   │   │   │   └── 📁 sync-all-users/   # User synchronization
-│   │   │   │       └── 📄 route.ts
 │   │   │   ├── 📁 upload/               # File upload endpoint
 │   │   │   │   └── 📄 route.ts          # Local file storage
 │   │   │   ├── 📁 users/                # User management
 │   │   │   │   ├── 📁 search/           # User search
+│   │   │   │   │   └── 📄 route.ts
+│   │   │   │   ├── 📁 profile/          # User profile management
 │   │   │   │   │   └── 📄 route.ts
 │   │   │   │   └── 📁 sync/             # User synchronization
 │   │   │   │       └── 📄 route.ts
@@ -119,10 +136,6 @@ whatsapp-clone-full/
 │   │   │           └── 📄 route.ts
 │   │   ├── 📁 chat/                     # Chat page
 │   │   │   └── 📄 page.tsx
-│   │   ├── 📁 debug/                    # Debug pages
-│   │   │   └── 📁 sync/                 # Sync testing
-│   │   │       ├── 📄 page.tsx
-│   │   │       └── 📄 SyncTestPage.tsx
 │   │   ├── 📁 sign-in/                  # Authentication pages
 │   │   │   └── 📁 [[...sign-in]]/
 │   │   │       └── 📄 page.tsx
@@ -130,53 +143,60 @@ whatsapp-clone-full/
 │   │   │   └── 📁 [[...sign-up]]/
 │   │   │       └── 📄 page.tsx
 │   │   ├── 📄 favicon.ico               # Site favicon
-│   │   ├── 📄 globals.css               # Global styles
+│   │   ├── 📄 globals.css               # Global styles with Aceternity UI
 │   │   ├── 📄 layout.tsx                # Root layout
-│   │   └── 📄 page.tsx                  # Home page
+│   │   └── 📄 page.tsx                  # Synapse landing page
 │   ├── 📁 components/                   # React components
 │   │   ├── 📁 auth/                     # Authentication components
 │   │   │   └── 📄 SignOutButton.tsx     # Sign out functionality
 │   │   ├── 📁 chat/                     # Chat components
 │   │   │   ├── 📄 ChatApp.tsx           # Main chat application
 │   │   │   ├── 📄 ChatPage.tsx          # Chat page wrapper
-│   │   │   ├── 📄 ChatWindow.tsx        # Chat window component
+│   │   │   ├── 📄 ChatWindow.tsx        # Chat window with spotlight effects
 │   │   │   ├── 📄 ContactsPanel.tsx     # Contacts management
 │   │   │   ├── 📄 ConversationList.tsx  # Conversation listing
-│   │   │   ├── 📄 MessageBubble.tsx     # Individual message display
+│   │   │   ├── 📄 MessageBubble.tsx     # Enhanced message display
 │   │   │   ├── 📄 MessageInput.tsx      # Message input component
 │   │   │   ├── 📄 MessageSearch.tsx     # Message search
-│   │   │   ├── 📄 Sidebar.tsx           # Chat sidebar
+│   │   │   ├── 📄 Sidebar.tsx           # Chat sidebar with glassmorphism
 │   │   │   ├── 📄 TypingIndicator.tsx   # Typing status
 │   │   │   ├── 📄 UserPresence.tsx      # Online status
 │   │   │   ├── 📄 UserProfile.tsx       # User profile display
 │   │   │   └── 📄 VoiceMessage.tsx      # Voice message player
 │   │   ├── 📁 Landing/                  # Landing page components
-│   │   │   └── 📄 LandingPage.tsx       # Landing page
-│   │   └── 📁 ui/                       # UI components (Radix UI)
+│   │   │   └── 📄 SynapseLandingPage.tsx # Enhanced Synapse landing page
+│   │   └── 📁 ui/                       # UI components (Enhanced)
+│   │       ├── 📄 animated-background.tsx # Animated background effects
 │   │       ├── 📄 avatar.tsx            # Avatar component
 │   │       ├── 📄 badge.tsx             # Badge component
-│   │       ├── 📄 button.tsx            # Button component
+│   │       ├── 📄 button.tsx            # Enhanced button with variants
 │   │       ├── 📄 card.tsx              # Card component
 │   │       ├── 📄 context-menu.tsx      # Context menu
 │   │       ├── 📄 dialog.tsx            # Dialog component
 │   │       ├── 📄 dropdown-menu.tsx     # Dropdown menu
+│   │       ├── 📄 floating-action-button.tsx # Floating action buttons
+│   │       ├── 📄 gradient-card.tsx     # Gradient card components
 │   │       ├── 📄 input.tsx             # Input component
 │   │       ├── 📄 label.tsx             # Label component
 │   │       ├── 📄 scroll-area.tsx       # Scroll area
 │   │       ├── 📄 separator.tsx         # Separator component
 │   │       ├── 📄 sheet.tsx             # Sheet component
 │   │       ├── 📄 sonner.tsx            # Toast notifications
+│   │       ├── 📄 sparkles.tsx          # Sparkles animation component
+│   │       ├── 📄 spotlight.tsx         # Spotlight effect component
+│   │       ├── 📄 synapse-banner.tsx    # Synapse branding component
 │   │       ├── 📄 tabs.tsx              # Tabs component
 │   │       ├── 📄 textarea.tsx          # Textarea component
-│   │       └── 📄 ThemeToggle.tsx       # Theme switcher
+│   │       ├── 📄 ThemeToggle.tsx       # Theme switcher
+│   │       └── 📄 tracing-beam.tsx      # Tracing beam animation
 │   ├── 📁 contexts/                     # React contexts
+│   │   ├── 📄 ProfileContext.tsx        # Profile management
 │   │   └── 📄 ThemeContext.tsx          # Theme management
 │   ├── 📁 hooks/                        # Custom React hooks
 │   │   ├── 📄 useSocket.ts              # Socket.io hook
 │   │   └── 📄 useUserSync.ts            # User synchronization
 │   ├── 📁 lib/                          # Utility libraries
 │   │   ├── 📄 prisma.ts                 # Prisma client
-│   │   ├── 📄 uploadthing.ts            # File upload utilities
 │   │   └── 📄 utils.ts                  # General utilities
 │   ├── 📁 types/                        # TypeScript type definitions
 │   │   └── 📄 chat.ts                   # Chat-related types
@@ -198,6 +218,7 @@ whatsapp-clone-full/
 ├── 📄 package.json                      # Dependencies and scripts
 ├── 📄 postcss.config.mjs                # PostCSS configuration
 ├── 📄 server.js                         # Custom server setup
+├── 📄 tailwind.config.ts                # Tailwind configuration with animations
 ├── 📄 tsconfig.json                     # TypeScript configuration
 └── 📄 README.md                         # Project documentation
 ```
@@ -214,7 +235,7 @@ whatsapp-clone-full/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/whatsapp-clone-full.git
+   git clone https://github.com/ridhamxdev/whatsapp-clone-full.git
    cd whatsapp-clone-full
    ```
 
@@ -238,7 +259,7 @@ whatsapp-clone-full/
    NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/chat
 
    # Database
-   DATABASE_URL="mysql://username:password@localhost:3306/whatsapp_clone"
+   DATABASE_URL="mysql://username:password@localhost:3306/synapse_messaging"
 
    # Socket.io
    NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
@@ -262,6 +283,32 @@ whatsapp-clone-full/
 
 6. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 🎨 UI/UX Enhancements
+
+### Aceternity UI Components
+- **Animated Background** - Dynamic background effects with multiple variants
+- **Gradient Cards** - Glassmorphism cards with gradient borders
+- **Floating Action Buttons** - Interactive floating buttons
+- **Sparkles** - Animated sparkle effects
+- **Spotlight** - Mouse-following spotlight effects
+- **Tracing Beam** - Animated content reveals
+- **Synapse Banner** - Interactive branding component
+
+### Enhanced Styling
+- **Glassmorphism Effects** - Modern glass-like components
+- **Gradient Animations** - Smooth gradient transitions
+- **Hover Effects** - Interactive element animations
+- **Floating Elements** - Animated background particles
+- **Custom Animations** - Framer Motion-powered interactions
+- **Responsive Design** - Mobile-first approach
+
+### Message Bubble Improvements
+- **Configurable Styling** - Separate styles for sender/receiver messages
+- **Better Text Fitting** - Optimized text alignment and spacing
+- **Enhanced Timestamps** - Improved timestamp positioning
+- **WhatsApp-Style Colors** - Professional green gradient scheme
+- **Smooth Animations** - Message appearance animations
 
 ## 🗄️ Database Schema
 
@@ -332,6 +379,7 @@ model Message {
 ### Users
 - `GET /api/users/search` - Search users
 - `POST /api/users/sync` - Sync user data
+- `GET /api/users/profile` - Get user profile
 
 ### Conversations
 - `GET /api/conversations` - List conversations
@@ -359,21 +407,30 @@ model Message {
 ### Chat Components
 - **ChatApp** - Main chat application wrapper
 - **ChatPage** - Chat page with sidebar and main area
-- **ChatWindow** - Main chat window with messages
-- **MessageBubble** - Individual message display
+- **ChatWindow** - Main chat window with spotlight effects
+- **MessageBubble** - Enhanced message display with configurable styling
 - **MessageInput** - Message input with file upload
 - **VoiceMessage** - Voice message player with controls
-- **Sidebar** - Chat sidebar with conversations
+- **Sidebar** - Chat sidebar with glassmorphism effects
 - **ContactsPanel** - User contacts management
 
-### UI Components (Radix UI)
-- **Button** - Customizable button component
+### Enhanced UI Components
+- **AnimatedBackground** - Dynamic background effects
+- **GradientCard** - Glassmorphism cards with gradients
+- **FloatingActionButton** - Interactive floating buttons
+- **Sparkles** - Animated sparkle effects
+- **Spotlight** - Mouse-following spotlight effects
+- **TracingBeam** - Animated content reveals
+- **SynapseBanner** - Interactive branding component
+
+### UI Components (Radix UI Enhanced)
+- **Button** - Enhanced button with multiple variants (gradient, glass, neon, floating)
 - **Input** - Form input component
 - **Dialog** - Modal dialog component
 - **Dropdown** - Dropdown menu component
 - **Avatar** - User avatar component
 - **Badge** - Status badge component
-- **Card** - Content card component
+- **Card** - Enhanced card component
 - **Tabs** - Tab navigation component
 
 ## 🔌 Real-Time Features
@@ -461,6 +518,7 @@ NEXT_PUBLIC_APP_URL=https://your-domain.com
 - **File Uploads** - Various file types and sizes
 - **Voice Messages** - Recording and playback
 - **Responsive Design** - Mobile and desktop testing
+- **UI Animations** - All Aceternity UI effects and interactions
 
 ### Browser Compatibility
 - **Chrome** - Full support
@@ -481,6 +539,7 @@ NEXT_PUBLIC_APP_URL=https://your-domain.com
 - **ESLint** - Follow linting rules
 - **Component Structure** - Follow established patterns
 - **Testing** - Test new features thoroughly
+- **UI/UX** - Maintain Aceternity UI design principles
 
 ## 📝 License
 
@@ -494,6 +553,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Prisma** - Database ORM
 - **Radix UI** - Component primitives
 - **Tailwind CSS** - Utility-first CSS
+- **Framer Motion** - Animation library
+- **Aceternity UI** - Design inspiration and components
 
 ## 📞 Support
 
@@ -504,8 +565,21 @@ For support and questions:
 
 ## 🔄 Changelog
 
-### Version 1.0.0
-- ✅ Initial release
+### Version 2.0.0 - Synapse Release
+- ✅ **Synapse Branding** - Complete rebrand with professional landing page
+- ✅ **Aceternity UI Integration** - Modern glassmorphism and gradient effects
+- ✅ **Enhanced Message Bubbles** - Configurable sender/receiver styling
+- ✅ **Interactive Animations** - Framer Motion-powered interactions
+- ✅ **WhatsApp-Style Colors** - Professional green gradient scheme
+- ✅ **Improved Landing Page** - Comprehensive Synapse landing page
+- ✅ **Floating Action Buttons** - Interactive floating UI elements
+- ✅ **Spotlight Effects** - Mouse-following spotlight animations
+- ✅ **Sparkles & Tracing Beam** - Aceternity UI-inspired effects
+- ✅ **Enhanced Navigation** - Professional navigation with Synapse branding
+- ✅ **Code Cleanup** - Removed debug folders and demo pages
+- ✅ **Optimized Structure** - Streamlined project organization
+
+### Version 1.0.0 - Initial Release
 - ✅ Real-time messaging
 - ✅ Voice messages
 - ✅ File uploads
@@ -516,4 +590,6 @@ For support and questions:
 
 **Made with ❤️ by Ridham**
 
-*This project demonstrates advanced web development techniques and serves as a comprehensive example of building modern, real-time chat applications.*
+*Synapse represents the future of messaging - combining cutting-edge technology with beautiful design to create an unparalleled communication experience.*
+
+*This project demonstrates advanced web development techniques and serves as a comprehensive example of building modern, real-time chat applications with professional branding and enhanced user experience.*

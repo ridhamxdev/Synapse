@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useUserSync } from '@/hooks/useUserSync'
 import { useSocket } from '@/hooks/useSocket'
+import { useTheme } from '@/contexts/ThemeContext'
 import { Sidebar } from '@/components/chat/Sidebar'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import { ContactsPanel } from '@/components/chat/ContactsPanel'
@@ -41,8 +42,9 @@ interface Conversation {
   }>
 }
 
-export function ChatApp() {
+function ChatAppContent() {
   const { user, isLoaded, dbUser } = useUserSync()
+  const { theme } = useTheme()
   const { socket, isConnected, connectionError } = useSocket()
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [activePanel, setActivePanel] = useState<'chat' | 'contacts' | 'profile'>('chat')
@@ -237,10 +239,14 @@ export function ChatApp() {
 
   if (!isLoaded || (isLoadingConversations && !hasLoadedInitial)) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className={`flex items-center justify-center h-screen transition-colors duration-300 ${
+        theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'
+      }`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p>Loading your chats...</p>
+          <p className={`transition-colors duration-300 ${
+            theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+          }`}>Loading your chats...</p>
           {connectionError && (
             <p className="text-red-500 mt-2">
               Connection Error: {connectionError}
@@ -252,7 +258,9 @@ export function ChatApp() {
   }
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className={`flex h-screen overflow-hidden transition-colors duration-300 ${
+      theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'
+    }`}>
       <Sidebar 
         selectedConversation={selectedConversation?.id ?? null}
         onSelectConversation={handleConversationSelect}
@@ -272,15 +280,27 @@ export function ChatApp() {
           />
         )}
         {activePanel === 'chat' && !selectedConversation && (
-          <div className="flex items-center justify-center h-full bg-card">
-            <div className="text-center text-muted-foreground max-w-md mx-auto px-4">
-              <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-12 h-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className={`flex items-center justify-center h-full transition-colors duration-300 ${
+            theme === 'dark' ? 'bg-slate-800' : 'bg-white'
+          }`}>
+            <div className={`text-center max-w-md mx-auto px-4 transition-colors duration-300 ${
+              theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
+            }`}>
+              <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 transition-colors duration-300 ${
+                theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'
+              }`}>
+                <svg className={`w-12 h-12 transition-colors duration-300 ${
+                  theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">Welcome to WhatsApp Clone</h3>
-              <p className="text-muted-foreground mb-4">Select a conversation to start chatting</p>
+              <h3 className={`text-xl font-semibold mb-2 transition-colors duration-300 ${
+                theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+              }`}>Welcome to WhatsApp Clone</h3>
+              <p className={`mb-4 transition-colors duration-300 ${
+                theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+              }`}>Select a conversation to start chatting</p>
               <div className="flex items-center justify-center space-x-2 text-sm">
                 <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
                 <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
@@ -312,4 +332,25 @@ export function ChatApp() {
       </div>
     </div>
   )
+}
+
+export function ChatApp() {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <p className="text-slate-900 dark:text-slate-100">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return <ChatAppContent />
 }
