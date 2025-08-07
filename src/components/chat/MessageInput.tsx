@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
+import { useTheme } from '@/contexts/ThemeContext'
 import {
   Send,
   Paperclip,
@@ -32,6 +33,7 @@ export function MessageInput({
   disabled
 }: MessageInputProps) {
   const { user } = useUser()
+  const { theme } = useTheme()
   const [message, setMessage] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
@@ -46,6 +48,7 @@ export function MessageInput({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const emojiPickerRef = useRef<HTMLDivElement>(null)
 
   // Local upload functions
 
@@ -301,13 +304,42 @@ export function MessageInput({
   }
 
   const onEmojiClick = (emojiData: any) => {
+    console.log('Emoji clicked:', emojiData.emoji)
+    console.log('Emoji data:', emojiData)
     setMessage(prev => prev + emojiData.emoji)
     setShowEmojiPicker(false)
     inputRef.current?.focus()
   }
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      
+      console.log('Click outside handler triggered', {
+        showEmojiPicker,
+        target: target,
+        inputRef: inputRef.current,
+        emojiPickerRef: emojiPickerRef.current,
+        isInputClick: inputRef.current?.contains(target),
+        isEmojiPickerClick: emojiPickerRef.current?.contains(target)
+      });
+      
+      if (showEmojiPicker && 
+          inputRef.current && 
+          !inputRef.current.contains(target) &&
+          emojiPickerRef.current &&
+          !emojiPickerRef.current.contains(target)) {
+        console.log('Closing emoji picker due to outside click');
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showEmojiPicker]);
+
   return (
-    <div className="border-t bg-white p-4">
+    <div className="border-t bg-white p-4 relative">
       {replyTo && (
         <div className="mb-2 p-2 bg-gray-100 rounded-lg flex items-center justify-between">
           <div>
@@ -327,10 +359,13 @@ export function MessageInput({
       )}
 
       {showEmojiPicker && (
-        <div className="absolute bottom-20 left-4 z-50">
+        <div ref={emojiPickerRef} className="absolute bottom-full left-0 mb-2 z-50 emoji-picker-container">
           <EmojiPicker 
             onEmojiClick={onEmojiClick}
-            theme={Theme.LIGHT}
+            theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
+            width={350}
+            height={400}
+            className="emoji-picker"
           />
         </div>
       )}
@@ -391,14 +426,17 @@ export function MessageInput({
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder={disabled ? "Connecting..." : "Type a message..."}
-            className="flex-1 border-none bg-transparent text-white focus:ring-0 text-sm"
+            className="flex-1 border-none bg-transparent text-gray-900 focus:ring-0 text-sm"
             disabled={disabled || isUploading || isRecording}
           />
 
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            onClick={() => {
+              console.log('Emoji button clicked, current state:', showEmojiPicker)
+              setShowEmojiPicker(!showEmojiPicker)
+            }}
             disabled={disabled || isRecording}
             className="p-2"
           >

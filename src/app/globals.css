@@ -816,3 +816,20 @@ button:focus-visible {
   background-color: hsl(var(--muted));
   transition: background-color 0.2s ease;
 }
+
+/* Emoji Picker Styles */
+.emoji-picker {
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .emoji-picker {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure emoji picker is above other elements */
+.emoji-picker-container {
+  z-index: 1000;
+  position: absolute;
+}
