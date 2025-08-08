@@ -53,6 +53,13 @@ export async function GET(
               select: { name: true }
             }
           }
+        },
+        reactions: {
+          select: {
+            id: true,
+            emoji: true,
+            userId: true
+          }
         }
       },
       orderBy: { createdAt: 'asc' },
@@ -152,6 +159,13 @@ export async function POST(
             sender: {
               select: { name: true }
             }
+          }
+        },
+        reactions: {
+          select: {
+            id: true,
+            emoji: true,
+            userId: true
           }
         }
       }

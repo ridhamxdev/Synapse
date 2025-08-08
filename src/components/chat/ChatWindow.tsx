@@ -11,6 +11,8 @@ import MessageBubble from './MessageBubble'
 import { TypingIndicator } from './TypingIndicator'
 import { Spotlight } from '@/components/ui/spotlight'
 import { UserProfileDrawer } from './UserProfileDrawer'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 
 interface Message {
   id: string
@@ -22,6 +24,11 @@ interface Message {
   fileUrl?: string
   fileName?: string
   replyToId?: string
+  replyTo?: {
+    id: string
+    content: string
+    sender?: { name?: string }
+  }
   sender: {
     id: string
     clerkId: string
@@ -49,6 +56,11 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
   const { theme } = useTheme()
   const [dbUserId, setDbUserId] = useState<string | null>(null)
   const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false)
+  const [replyContext, setReplyContext] = useState<Message | null>(null)
+  const [isForwardOpen, setIsForwardOpen] = useState(false)
+  const [forwardSource, setForwardSource] = useState<Message | null>(null)
+  const [allConversations, setAllConversations] = useState<any[]>([])
+  const [conversationSearch, setConversationSearch] = useState('')
 
   // Get the current user's database ID
   useEffect(() => {
@@ -156,6 +168,14 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
+
+  // Load conversations for forward picker
+  useEffect(() => {
+    fetch('/api/conversations')
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(data => setAllConversations(data.conversations || []))
+      .catch(() => setAllConversations([]))
+  }, [])
 
   const handleProfileClick = () => {
     if (conversation.otherUserId) {
@@ -320,6 +340,8 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
                     key={msg.id}
                     message={msg}
                     isOwn={isOwn}
+                    onReply={(m: Message) => setReplyContext(m)}
+                    onForward={(m: Message) => { setForwardSource(m); setIsForwardOpen(true) }}
                   />
                 )
               })}
@@ -341,6 +363,8 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
           onOptimisticMessage={addOptimisticMessage}
           disabled={!isConnected}
           dbUserId={dbUserId}
+          externalReplyTo={replyContext}
+          onClearExternalReply={() => setReplyContext(null)}
         />
       </div>
 
@@ -357,6 +381,64 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
           onStartVideoCall={handleStartVideoCall}
         />
       )}
+
+      {/* Forward dialog */}
+      <Dialog open={isForwardOpen} onOpenChange={setIsForwardOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Forward message</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              placeholder="Search conversations"
+              value={conversationSearch}
+              onChange={(e) => setConversationSearch(e.target.value)}
+            />
+            <div className="max-h-64 overflow-y-auto space-y-2">
+              {(allConversations || [])
+                .filter((c) => (c.name || '').toLowerCase().includes(conversationSearch.toLowerCase()))
+                .map((c) => (
+                  <div key={c.id} className="flex items-center justify-between rounded-md border p-2">
+                    <div className="flex items-center gap-2">
+                      <img src={c.imageUrl || '/default-avatar.png'} className="h-8 w-8 rounded-full" />
+                      <div>
+                        <div className="text-sm font-medium">{c.name}</div>
+                        {c.lastMessage?.content && (
+                          <div className="text-xs text-muted-foreground line-clamp-1">{c.lastMessage.content}</div>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        if (!forwardSource) return
+                        try {
+                          const body: any = {
+                            content: forwardSource.type === 'TEXT' ? forwardSource.content : (forwardSource.fileName || forwardSource.content || ''),
+                            type: forwardSource.type,
+                            fileUrl: forwardSource.fileUrl,
+                            fileName: forwardSource.fileName,
+                          }
+                          const res = await fetch(`/api/conversations/${c.id}/messages`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(body)
+                          })
+                          if (res.ok) {
+                            setIsForwardOpen(false)
+                            setForwardSource(null)
+                          }
+                        } catch {}
+                      }}
+                    >
+                      Forward
+                    </Button>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Spotlight>
   )
 }

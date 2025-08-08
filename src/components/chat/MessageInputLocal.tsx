@@ -28,6 +28,8 @@ interface MessageInputProps {
   onOptimisticMessage: (message: any) => void
   disabled?: boolean
   dbUserId?: string | null
+  externalReplyTo?: any | null
+  onClearExternalReply?: () => void
 }
 
 export function MessageInputLocal({
@@ -36,7 +38,9 @@ export function MessageInputLocal({
   onTyping,
   onOptimisticMessage,
   disabled,
-  dbUserId
+  dbUserId,
+  externalReplyTo,
+  onClearExternalReply
 }: MessageInputProps) {
   const { user } = useUser()
   const { theme } = useTheme()
@@ -44,6 +48,13 @@ export function MessageInputLocal({
   const [isUploading, setIsUploading] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [replyTo, setReplyTo] = useState<any>(null)
+
+  // Sync external reply trigger from parent (reply action on a bubble)
+  useEffect(() => {
+    if (externalReplyTo) {
+      setReplyTo(externalReplyTo)
+    }
+  }, [externalReplyTo])
   
   // Voice recording states
   const [isRecording, setIsRecording] = useState(false)
@@ -84,6 +95,7 @@ export function MessageInputLocal({
         onOptimisticMessage(savedMessage.message)
         socket.emit('message:send', savedMessage.message)
         setReplyTo(null)
+        onClearExternalReply?.()
         inputRef.current?.focus()
       } else {
         throw new Error('Failed to save message')
@@ -214,7 +226,7 @@ export function MessageInputLocal({
         const messageResponse = await fetch(`/api/conversations/${conversationId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(messageData)
+          body: JSON.stringify({ ...messageData, replyToId: replyTo?.id })
         })
 
         if (messageResponse.ok) {
@@ -223,6 +235,8 @@ export function MessageInputLocal({
           socket.emit('message:send', savedMessage.message)
           toast.success("Image sent successfully")
           setMessage('')
+          setReplyTo(null)
+          onClearExternalReply?.()
         } else {
           throw new Error('Failed to save image message')
         }
@@ -275,7 +289,7 @@ export function MessageInputLocal({
         const messageResponse = await fetch(`/api/conversations/${conversationId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(messageData)
+          body: JSON.stringify({ ...messageData, replyToId: replyTo?.id })
         })
 
         if (messageResponse.ok) {
@@ -284,6 +298,8 @@ export function MessageInputLocal({
           socket.emit('message:send', savedMessage.message)
           toast.success("File sent successfully")
           setMessage('')
+          setReplyTo(null)
+          onClearExternalReply?.()
         } else {
           throw new Error('Failed to save file message')
         }

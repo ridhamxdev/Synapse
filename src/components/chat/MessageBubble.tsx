@@ -2,6 +2,24 @@
 
 import { format } from 'date-fns'
 import { VoiceMessage } from './VoiceMessage'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+import { CornerUpLeft, Forward, MoreVertical } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import EmojiPicker, { Theme as EmojiTheme } from 'emoji-picker-react'
+import { useTheme } from '@/contexts/ThemeContext'
+
+interface Reaction {
+  id: string
+  emoji: string
+  userId: string
+}
 
 interface Message {
   id: string
@@ -9,6 +27,7 @@ interface Message {
   senderId: string
   createdAt: string
   type: 'TEXT' | 'IMAGE' | 'FILE' | 'VOICE'
+  conversationId?: string
   fileUrl?: string
   fileName?: string
   fileSize?: number
@@ -21,15 +40,39 @@ interface Message {
     name: string
     imageUrl?: string
   }
+  replyTo?: {
+    id: string
+    content: string
+    sender?: {
+      name?: string
+    }
+  }
+  reactions?: Reaction[]
 }
 
 interface Props {
   message: Message
   isOwn: boolean
+  onReply?: (message: any) => void
+  onForward?: (message: any) => void
 }
 
-export default function MessageBubble({ message, isOwn }: Props) {
+export default function MessageBubble({ message, isOwn, onReply, onForward }: Props) {
   const messageTime = format(new Date(message.createdAt), 'HH:mm')
+  const [reactions, setReactions] = useState<Reaction[]>(() => (message as any).reactions || [])
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const { theme } = useTheme()
+  const pickerRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowEmojiPicker(false)
+      }
+    }
+    if (showEmojiPicker) document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [showEmojiPicker])
 
   const getStatusIcon = () => {
     if (!isOwn) return null
@@ -40,7 +83,7 @@ export default function MessageBubble({ message, isOwn }: Props) {
 
   return (
     <div className={`flex w-full ${isOwn ? 'justify-end' : 'justify-start'} mb-3`}>
-      <div className={`flex items-end gap-2 max-w-[70%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+      <div className={`group flex items-end gap-2 max-w-[70%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
         {!isOwn && (
           <img
             src={message.sender.imageUrl || '/default-avatar.png'}
@@ -49,15 +92,29 @@ export default function MessageBubble({ message, isOwn }: Props) {
           />
         )}
         
-        <div
-          className={
-            'relative rounded-2xl shadow-sm max-w-full message-bubble ' +
-            (isOwn ? 'own px-3 py-2' : 'other px-4 py-3')
-          }
-        >
+        {/* Column wraps bubble and below-bubble reactions */}
+        <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+          <div
+            className={
+              'relative rounded-2xl shadow-sm max-w-full message-bubble ' +
+              (isOwn ? 'own px-3 py-2' : 'other px-4 py-3')
+            }
+          >
           {!isOwn && (
             <div className="text-xs font-semibold text-blue-600 mb-3 opacity-90">
               {message.sender.name}
+            </div>
+          )}
+
+          {/* Quoted reply preview */}
+          {message.replyTo && (
+            <div className={`mb-2 pl-3 border-l-2 ${isOwn ? 'border-white/40' : 'border-gray-300'} text-xs`}>
+              <div className={`font-semibold ${isOwn ? 'text-white/80' : 'text-gray-700'}`}>
+                {message.replyTo.sender?.name || 'Message'}
+              </div>
+              <div className={`${isOwn ? 'text-white/80' : 'text-gray-600'} line-clamp-2`}>
+                {message.replyTo.content}
+              </div>
             </div>
           )}
 
@@ -68,11 +125,11 @@ export default function MessageBubble({ message, isOwn }: Props) {
           )}
 
           {message.type === 'IMAGE' && message.fileUrl && (
-            <div className="space-y-3">
-              <img 
-                src={message.fileUrl} 
-                alt="shared-img" 
-                className="max-w-full h-auto rounded-lg shadow-sm" 
+            <div className="space-y-2">
+              <img
+                src={message.fileUrl}
+                alt="image"
+                className="rounded-lg shadow-sm max-w-[240px] max-h-[320px] w-auto h-auto object-contain"
               />
               {message.content && (
                 <div className={`text-sm break-words text-left ${isOwn ? 'leading-tight' : 'leading-relaxed'}`}>
@@ -106,12 +163,90 @@ export default function MessageBubble({ message, isOwn }: Props) {
             />
           )}
 
-          <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+            <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
             <span className={`text-xs ${isOwn ? 'text-white/70' : 'text-gray-400'}`}>
               {messageTime}
             </span>
             {getStatusIcon()}
+            </div>
           </div>
+
+          {/* Reactions list (below the bubble) */}
+          {reactions && reactions.length > 0 && (
+            <div className={`mt-1 flex flex-wrap gap-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+              {Object.values(
+                reactions.reduce((acc: Record<string, { emoji: string; count: number }>, r) => {
+                  if (!acc[r.emoji]) acc[r.emoji] = { emoji: r.emoji, count: 0 }
+                  acc[r.emoji].count += 1
+                  return acc
+                }, {})
+              ).map(({ emoji, count }) => (
+                <span
+                  key={emoji}
+                  className={`text-xs px-2 py-0.5 rounded-full border ${isOwn ? 'bg-white/10 text-white border-white/20' : 'bg-black/5 text-black/80 border-black/10'}`}
+                >
+                  {emoji} {count}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Hover-revealed Add reaction control below the bubble */}
+          <div className={`mt-1 ${isOwn ? 'justify-end' : 'justify-start'} flex opacity-0 group-hover:opacity-100 transition-opacity`}> 
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-7 px-2 py-0 text-xs ${isOwn ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-black/5'}`}
+              onClick={() => setShowEmojiPicker((v) => !v)}
+            >
+              😀 Add reaction
+            </Button>
+          </div>
+
+          {showEmojiPicker && (
+            <div ref={pickerRef} className={`mt-2 z-50 ${isOwn ? 'self-end' : 'self-start'}`}>
+              <EmojiPicker
+                theme={theme === 'dark' ? EmojiTheme.DARK : EmojiTheme.LIGHT}
+                width={320}
+                height={380}
+                onEmojiClick={async (emojiData) => {
+                  try {
+                    const res = await fetch(`/api/conversations/${message.conversationId || ''}/messages/${message.id}`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ emoji: (emojiData as any).emoji })
+                    })
+                    if (res.ok) {
+                      const data = await res.json()
+                      setReactions(data.reactions || [])
+                    }
+                  } finally {
+                    setShowEmojiPicker(false)
+                  }
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Actions menu outside bubble: right for receiver, left for sender */}
+        <div className={`mb-1 ${isOwn ? 'mr-1' : 'ml-1'} opacity-0 group-hover:opacity-100 transition-opacity`}> 
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-70 hover:opacity-100 rounded-full">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side={isOwn ? 'left' : 'right'}>
+              <DropdownMenuItem onClick={() => onReply?.(message)}>
+                <CornerUpLeft className="mr-2 h-4 w-4" /> Reply
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onForward?.(message)}>
+                <Forward className="mr-2 h-4 w-4" /> Forward
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>
