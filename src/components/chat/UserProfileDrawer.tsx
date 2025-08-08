@@ -143,7 +143,6 @@ export function UserProfileDrawer({
             ) : (
               <ScrollArea className="flex-1 w-full" type="always">
                 <div className="space-y-3 pr-4 pb-8">
-                  {/* Avatar Section */}
                   <div className="flex flex-col items-center space-y-3">
                     <div className="relative group">
                       <div className={`absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200 animate-pulse`}></div>
@@ -183,7 +182,6 @@ export function UserProfileDrawer({
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
                   <div className={`flex space-x-2 p-3 rounded-2xl backdrop-blur-sm ${
                     isDarkMode 
                       ? 'bg-slate-800/30 border border-slate-700/50' 
@@ -226,9 +224,7 @@ export function UserProfileDrawer({
                     </Button>
                   </div>
 
-                  {/* Profile Information */}
                   <div className="space-y-2">
-                    {/* Name Section */}
                     <div className={`space-y-2 p-2 rounded-2xl transition-all duration-300 ${
                       isDarkMode 
                         ? 'bg-slate-800/30 border border-slate-700/50 hover:bg-slate-800/50' 
@@ -257,7 +253,6 @@ export function UserProfileDrawer({
                       </p>
                     </div>
 
-                    {/* Email Section */}
                     {userData.email && (
                       <div className={`space-y-2 p-2 rounded-2xl transition-all duration-300 ${
                         isDarkMode 
@@ -288,7 +283,6 @@ export function UserProfileDrawer({
                       </div>
                     )}
 
-                    {/* Phone Section */}
                     {userData.phone && (
                       <div className={`space-y-2 p-2 rounded-2xl transition-all duration-300 ${
                         isDarkMode 
@@ -319,7 +313,6 @@ export function UserProfileDrawer({
                       </div>
                     )}
 
-                    {/* Bio Section */}
                     {userData.bio && userData.bio !== 'No bio available' && (
                       <div className={`space-y-2 p-2 rounded-2xl transition-all duration-300 ${
                         isDarkMode 
@@ -349,8 +342,7 @@ export function UserProfileDrawer({
                         </p>
                       </div>
                     )}
-
-                    {/* Account Information Section */}
+  
                     <div className={`space-y-3 p-2 rounded-2xl transition-all duration-300 ${
                       isDarkMode 
                         ? 'bg-slate-800/30 border border-slate-700/50 hover:bg-slate-800/50' 

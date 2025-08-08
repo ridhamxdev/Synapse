@@ -128,7 +128,6 @@ function ChatAppContent() {
     }
 
     const handleNewMessage = (message: any) => {
-      // Check if the message is from the current user using sender.id (database ID)
       if (message.sender?.id !== dbUser?.id) {
         setConversations(prev => 
           prev.map(conv => {
@@ -205,7 +204,6 @@ function ChatAppContent() {
   const getOtherUserId = (conversation: Conversation): string | undefined => {
     if (!dbUser || !conversation.participants) return undefined
     
-    // Find the participant that is not the current user
     const otherParticipant = conversation.participants.find(
       participant => participant.id !== dbUser.id
     )

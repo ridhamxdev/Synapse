@@ -43,7 +43,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
     imageUrl: user?.imageUrl || '',
   })
 
-  // Load user data from database on component mount
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
@@ -87,7 +86,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
       if (response.ok) {
         setIsEditing(false)
         toast.success('Profile updated successfully')
-        // Refresh user data without page reload
         await refreshUser()
       } else {
         throw new Error('Failed to update profile')
@@ -114,13 +112,12 @@ export function UserProfile({ onBack }: UserProfileProps) {
     const file = event.target.files?.[0]
     if (!file) return
 
-    // Check file type and size
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file')
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    if (file.size > 5 * 1024 * 1024) {
       toast.error('Image size should be less than 5MB')
       return
     }
@@ -139,7 +136,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
         const data = await response.json()
         setEditedProfile(prev => ({ ...prev, imageUrl: data.url }))
         
-        // Immediately update the profile with the new image
         const profileResponse = await fetch('/api/users/profile', {
           method: 'PUT',
           headers: {
@@ -155,7 +151,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
 
         if (profileResponse.ok) {
           toast.success('Avatar updated successfully')
-          // Refresh user data to reflect changes
           await refreshUser()
         } else {
           throw new Error('Failed to update profile with new image')
@@ -173,7 +168,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
 
   const handleCancel = () => {
     setIsEditing(false)
-    // Reset to original values
     setEditedProfile({
       name: user?.fullName || '',
       bio: 'Hey there! I am using WhatsApp Clone.',
@@ -187,7 +181,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
     <div className={`h-full flex flex-col transition-colors duration-300 ${
       theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'
     }`}>
-      {/* Header */}
       <div className={`backdrop-blur-sm border-b p-4 flex-shrink-0 transition-colors duration-300 ${
         theme === 'dark' 
           ? 'bg-slate-800/80 border-slate-700/50' 
@@ -229,10 +222,8 @@ export function UserProfile({ onBack }: UserProfileProps) {
         </div>
       </div>
 
-      {/* Scrollable Content */}
       <ScrollArea className="flex-1 h-full">
         <div className="p-8 pb-32 space-y-8 min-h-full">
-          {/* Avatar Section */}
           <div className="flex flex-col items-center space-y-4">
                          <div className="relative group">
                <Avatar 
@@ -285,9 +276,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
             )}
           </div>
 
-          {/* Profile Information */}
           <div className="space-y-8">
-            {/* Name Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-xl ${
@@ -322,7 +311,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
               )}
             </div>
 
-            {/* Email Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-xl ${
@@ -351,7 +339,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
               </div>
             </div>
 
-            {/* Phone Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-xl ${
@@ -392,7 +379,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
               )}
             </div>
 
-            {/* Bio Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-xl ${
@@ -436,7 +422,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
               )}
             </div>
 
-            {/* Account Information Section */}
             <div className="space-y-6">
               <h3 className={`text-xl font-bold flex items-center gap-3 transition-colors duration-300 ${
                 theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
@@ -496,7 +481,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
             </div>
           </div>
 
-          {/* Edit Actions */}
           {isEditing && (
             <div className="flex space-x-4 pt-6">
               <Button 
@@ -527,7 +511,6 @@ export function UserProfile({ onBack }: UserProfileProps) {
             </div>
           )}
 
-          {/* Sign Out Section */}
           <div className="pt-4">
             <SignOutButton 
               variant="outline" 

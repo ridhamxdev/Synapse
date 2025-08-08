@@ -20,12 +20,10 @@ export function VoiceMessage({ fileUrl, content, fileSize, isOwn }: VoiceMessage
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
-    // Clear previous timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
     }
 
-    // Reset states
     setIsLoading(true)
     setHasError(false)
     setDuration(0)
@@ -62,22 +60,18 @@ export function VoiceMessage({ fileUrl, content, fileSize, isOwn }: VoiceMessage
       audio.addEventListener('ended', handleEnded)
       audio.addEventListener('error', handleError)
       
-      // Try to load duration immediately
       if (audio.readyState >= 1) {
         updateDuration()
       }
       
-      // Force load metadata
       audio.load()
       
-      // Try to extract duration from content immediately as fallback
       const contentDuration = extractDurationFromContent(content)
       if (contentDuration > 0) {
         setDuration(contentDuration)
         setIsLoading(false)
       }
 
-      // Set timeout to stop loading after 3 seconds
       timeoutRef.current = setTimeout(() => {
         if (isLoading) {
           console.log('Audio loading timeout - using content fallback')
@@ -120,7 +114,6 @@ export function VoiceMessage({ fileUrl, content, fileSize, isOwn }: VoiceMessage
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 
-  // Extract duration from content if available
   const extractDurationFromContent = (content: string | undefined): number => {
     if (!content) return 0
     const match = content.match(/\((\d+)s\)/)

@@ -19,19 +19,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true)
     
-    // Get theme from localStorage or default to light theme
     const savedTheme = localStorage.getItem('whatsapp-theme') as Theme
-    const initialTheme = savedTheme || 'light' // Default to light theme instead of system theme
+    const initialTheme = savedTheme || 'light'
     
     setTheme(initialTheme)
     updateTheme(initialTheme)
     
-    // Add transition class immediately
     document.documentElement.classList.add('theme-transition-ready')
   }, [])
 
   const updateTheme = (newTheme: Theme) => {
-    // Force a repaint to ensure theme changes are applied
     if (newTheme === 'dark') {
       document.documentElement.classList.add('dark')
     } else {
@@ -52,7 +49,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     handleSetTheme(newTheme)
   }
 
-  // Prevent flash of unstyled content
   if (!mounted) {
     return <div style={{ visibility: 'hidden' }}>{children}</div>
   }

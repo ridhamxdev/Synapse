@@ -38,7 +38,7 @@ export default function RootLayout({
                   try {
                     var theme = localStorage.getItem('whatsapp-theme');
                     var systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                    var initialTheme = theme || 'light'; // Default to light theme instead of system theme
+                    var initialTheme = theme || 'light';
                     
                     if (initialTheme === 'dark') {
                       document.documentElement.classList.add('dark');
@@ -47,7 +47,6 @@ export default function RootLayout({
                     }
                     document.documentElement.setAttribute('data-theme', initialTheme);
                   } catch (e) {
-                    // Fallback to light theme if localStorage is not available
                     document.documentElement.classList.remove('dark');
                     document.documentElement.setAttribute('data-theme', 'light');
                   }

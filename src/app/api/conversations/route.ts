@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
     })
 
   } catch (error) {
-    console.error('❌ Conversation creation error:', error)
+    console.error('Conversation creation error:', error)
     return NextResponse.json({ 
       error: 'Failed to create conversation', 
       details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
@@ -260,7 +260,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ conversations: transformedConversations })
   } catch (error) {
-    console.error('❌ Conversations fetch error:', error)
+    console.error('Conversations fetch error:', error)
     return NextResponse.json({ 
       error: 'Internal server error',
       details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined

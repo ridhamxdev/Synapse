@@ -92,7 +92,6 @@ export default function MessageBubble({ message, isOwn, onReply, onForward }: Pr
           />
         )}
         
-        {/* Column wraps bubble and below-bubble reactions */}
         <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
           <div
             className={
@@ -106,7 +105,6 @@ export default function MessageBubble({ message, isOwn, onReply, onForward }: Pr
             </div>
           )}
 
-          {/* Quoted reply preview */}
           {message.replyTo && (
             <div className={`mb-2 pl-3 border-l-2 ${isOwn ? 'border-white/40' : 'border-gray-300'} text-xs`}>
               <div className={`font-semibold ${isOwn ? 'text-white/80' : 'text-gray-700'}`}>
@@ -171,7 +169,6 @@ export default function MessageBubble({ message, isOwn, onReply, onForward }: Pr
             </div>
           </div>
 
-          {/* Reactions list (below the bubble) */}
           {reactions && reactions.length > 0 && (
             <div className={`mt-1 flex flex-wrap gap-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
               {Object.values(
@@ -191,7 +188,6 @@ export default function MessageBubble({ message, isOwn, onReply, onForward }: Pr
             </div>
           )}
 
-          {/* Hover-revealed Add reaction control below the bubble */}
           <div className={`mt-1 ${isOwn ? 'justify-end' : 'justify-start'} flex opacity-0 group-hover:opacity-100 transition-opacity`}> 
             <Button
               variant="ghost"
@@ -229,7 +225,6 @@ export default function MessageBubble({ message, isOwn, onReply, onForward }: Pr
           )}
         </div>
 
-        {/* Actions menu outside bubble: right for receiver, left for sender */}
         <div className={`mb-1 ${isOwn ? 'mr-1' : 'ml-1'} opacity-0 group-hover:opacity-100 transition-opacity`}> 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

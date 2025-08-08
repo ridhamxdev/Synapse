@@ -53,8 +53,6 @@ export function ConversationList({
     )
   }
 
-  // If there's a search query, use the conversations as-is (they're already filtered from the API)
-  // If no search query, filter by conversation name locally
   const filteredConversations = searchQuery.trim() 
     ? conversations 
     : conversations.filter((conv) =>
@@ -140,7 +138,6 @@ export function ConversationList({
             }`}
             onClick={() => onSelectConversation(conv.id)}
           >
-            {/* Enhanced sliding background effect with gradient */}
             <span className={`absolute bottom-0 left-0 h-48 w-full origin-bottom translate-y-full transform overflow-hidden rounded-lg transition-all duration-500 ease-out group-hover:translate-y-14 ${
               isSelected
                 ? 'bg-gradient-to-t from-blue-500/20 via-purple-500/10 to-transparent'
@@ -149,9 +146,7 @@ export function ConversationList({
                   : 'bg-gradient-to-t from-slate-200/20 via-slate-100/10 to-transparent'
             }`}></span>
             
-            {/* Content with enhanced effects */}
             <div className="relative z-10">
-              {/* Enhanced glow effect for selected conversations */}
               {isSelected && (
                 <div className={`absolute inset-0 rounded-lg transition-all duration-500 ${
                   theme === 'dark' 

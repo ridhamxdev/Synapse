@@ -37,7 +37,6 @@ export function SynapseLandingPage() {
 
   return (
     <div className="min-h-screen bg-slate-900">
-      {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-slate-900/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -72,18 +71,14 @@ export function SynapseLandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
       <section className="relative w-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden pt-16">
-        {/* Animated background */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px]" />
           <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/20 opacity-20 blur-[100px]" />
         </div>
 
-        {/* Main content */}
         <div className="relative z-10 px-4 py-16 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
-            {/* Tagline */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -97,8 +92,6 @@ export function SynapseLandingPage() {
                 Next Generation Communication
               </span>
             </motion.div>
-
-            {/* Main title with hover effect */}
             <div className="relative mb-8">
               <svg
                 ref={svgRef}
@@ -153,7 +146,6 @@ export function SynapseLandingPage() {
                   </mask>
                 </defs>
                 
-                {/* Background text */}
                 <text
                   x="50%"
                   y="50%"
@@ -166,7 +158,6 @@ export function SynapseLandingPage() {
                   SYNAPSE
                 </text>
                 
-                {/* Gradient text */}
                 <motion.text
                   x="50%"
                   y="50%"
@@ -182,7 +173,6 @@ export function SynapseLandingPage() {
                   SYNAPSE
                 </motion.text>
                 
-                {/* Reveal text */}
                 <motion.text
                   x="50%"
                   y="50%"
@@ -201,7 +191,6 @@ export function SynapseLandingPage() {
               </svg>
             </div>
 
-            {/* Subtitle */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -216,7 +205,6 @@ export function SynapseLandingPage() {
               </p>
             </motion.div>
 
-            {/* CTA Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -250,7 +238,6 @@ export function SynapseLandingPage() {
           </div>
         </div>
 
-        {/* Floating elements */}
         <div className="absolute inset-0 pointer-events-none">
           {[...Array(6)].map((_, i) => (
             <motion.div
@@ -275,7 +262,6 @@ export function SynapseLandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -348,7 +334,6 @@ export function SynapseLandingPage() {
         </div>
       </section>
 
-      {/* Stats Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-slate-800/50 to-slate-900/50">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
@@ -378,7 +363,6 @@ export function SynapseLandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-primary/10 to-primary/5">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
@@ -422,8 +406,7 @@ export function SynapseLandingPage() {
           </motion.div>
         </div>
       </section>
-
-      {/* Footer */}
+            
       <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-white/10">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">

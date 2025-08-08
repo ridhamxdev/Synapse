@@ -62,7 +62,6 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
   const [allConversations, setAllConversations] = useState<any[]>([])
   const [conversationSearch, setConversationSearch] = useState('')
 
-  // Get the current user's database ID
   useEffect(() => {
     if (user?.id) {
       fetch('/api/users/sync', {
@@ -86,26 +85,22 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
 
   const handleNewMessage = useCallback((message: Message) => {
     if (message.conversationId !== conversation.id) return
-    // Check if the message is from the current user using database ID
     if (message.sender.id === dbUserId) return
     setMessages(prev => {
       if (prev.some(m => m.id === message.id)) return prev
       return [...prev, message]
     })
-    // Stop typing indicator when message is received
     setIsTyping(false)
     setTypingUser('')
   }, [conversation.id, dbUserId])
 
   const handleTypingStart = useCallback((data: { userId: string; userName: string }) => {
-    // Check if the typing user is the current user using database ID
     if (data.userId === dbUserId) return
     setIsTyping(true)
     setTypingUser(data.userName)
   }, [dbUserId])
 
   const handleTypingStop = useCallback((data: { userId: string }) => {
-    // Check if the typing user is the current user using database ID
     if (data.userId === dbUserId) return
     setIsTyping(false)
     setTypingUser('')
@@ -117,7 +112,6 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
       return [...prev, message]
     })
     
-    // Notify parent component about the new message
     if (onMessageSent) {
       onMessageSent(message)
     }
@@ -169,7 +163,6 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
 
-  // Load conversations for forward picker
   useEffect(() => {
     fetch('/api/conversations')
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
@@ -184,18 +177,15 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
   }
 
   const handleStartChat = () => {
-    // This would typically navigate to the conversation
     setIsProfileDrawerOpen(false)
   }
 
   const handleStartCall = () => {
-    // Implement call functionality
     console.log('Starting call with:', conversation.otherUserId)
     setIsProfileDrawerOpen(false)
   }
 
   const handleStartVideoCall = () => {
-    // Implement video call functionality
     console.log('Starting video call with:', conversation.otherUserId)
     setIsProfileDrawerOpen(false)
   }
@@ -210,11 +200,10 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
         return { text: 'just now', type: 'recent' }
       } else if (diffInMinutes < 60) {
         return { text: `${diffInMinutes}m ago`, type: 'recent' }
-      } else if (diffInMinutes < 1440) { // Less than 24 hours
+      } else if (diffInMinutes < 1440) {
         const hours = Math.floor(diffInMinutes / 60)
         return { text: `${hours}h ago`, type: 'hours' }
       } else {
-        // More than 24 hours - show date and time
         return { text: format(date, 'MMM d, yyyy at HH:mm'), type: 'date' }
       }
     } catch (error) {
@@ -290,7 +279,6 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
           </div>
         </div>
         
-        {/* Call Action Buttons */}
         <div className="flex items-center space-x-2">
           <Button
             variant="ghost"
@@ -333,7 +321,6 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
           ) : (
             <div className="space-y-1">
               {messages.map(msg => {
-                // Compare using database user ID for accurate message ownership
                 const isOwn = msg.sender.id === dbUserId;
                 return (
                   <MessageBubble
@@ -368,7 +355,6 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
         />
       </div>
 
-      {/* User Profile Drawer */}
       {conversation.otherUserId && (
         <UserProfileDrawer
           isOpen={isProfileDrawerOpen}
@@ -382,7 +368,6 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
         />
       )}
 
-      {/* Forward dialog */}
       <Dialog open={isForwardOpen} onOpenChange={setIsForwardOpen}>
         <DialogContent>
           <DialogHeader>

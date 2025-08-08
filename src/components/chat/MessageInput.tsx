@@ -39,7 +39,6 @@ export function MessageInput({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [replyTo, setReplyTo] = useState<any>(null)
   
-  // Voice recording states
   const [isRecording, setIsRecording] = useState(false)
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
   const [recordingTime, setRecordingTime] = useState(0)
@@ -49,8 +48,6 @@ export function MessageInput({
   const imageInputRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const emojiPickerRef = useRef<HTMLDivElement>(null)
-
-  // Local upload functions
 
   const sendMessage = useCallback(async () => {
     if (!message.trim() || !socket || disabled || !user?.id) return
@@ -91,7 +88,6 @@ export function MessageInput({
     }
   }, [message, socket, conversationId, user?.id, replyTo, onTyping, onOptimisticMessage, disabled])
 
-  // Voice recording functions
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -200,7 +196,6 @@ export function MessageInput({
         const fileUrl = result.url
         const fileName = result.name
         
-        // Create message with image
         const messageData = {
           conversationId,
           content: message || 'Image',
@@ -235,7 +230,6 @@ export function MessageInput({
       console.error('Image upload error:', error)
     } finally {
       setIsUploading(false)
-      // Reset file input
       if (imageInputRef.current) {
         imageInputRef.current.value = ''
       }
@@ -261,7 +255,6 @@ export function MessageInput({
         const fileUrl = result.url
         const fileName = result.name
         
-        // Create message with file
         const messageData = {
           conversationId,
           content: message || fileName,
@@ -296,7 +289,6 @@ export function MessageInput({
       console.error('File upload error:', error)
     } finally {
       setIsUploading(false)
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }

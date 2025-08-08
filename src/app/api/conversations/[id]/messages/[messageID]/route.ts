@@ -17,11 +17,9 @@ export async function POST(
     const currentDbUser = await prisma.user.findUnique({ where: { clerkId: user.id } })
     if (!currentDbUser) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-    // Verify access
     const access = await prisma.conversationUser.findFirst({ where: { conversationId, userId: currentDbUser.id } })
     if (!access) return NextResponse.json({ error: 'Access denied' }, { status: 403 })
 
-    // Toggle reaction
     const existing = await prisma.messageReaction.findUnique({
       where: {
         messageId_userId_emoji: {
@@ -38,7 +36,6 @@ export async function POST(
       await prisma.messageReaction.create({ data: { messageId: messageID, userId: currentDbUser.id, emoji } })
     }
 
-    // Return updated reactions
     const reactions = await prisma.messageReaction.findMany({
       where: { messageId: messageID },
       select: { id: true, emoji: true, userId: true },

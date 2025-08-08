@@ -31,7 +31,6 @@ export async function POST(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Save audio file
     const bytes = await audioFile.arrayBuffer()
     const buffer = Buffer.from(bytes)
     
@@ -39,7 +38,6 @@ export async function POST(
     const voiceDir = join(process.cwd(), 'public', 'uploads', 'voice')
     const filepath = join(voiceDir, filename)
     
-    // Create voice directory if it doesn't exist
     const { mkdir } = await import('fs/promises')
     await mkdir(voiceDir, { recursive: true })
     

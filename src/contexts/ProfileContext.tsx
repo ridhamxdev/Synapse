@@ -26,7 +26,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }
 
   const refreshProfile = () => {
-    // This will be called to refresh profile data from the server
     setProfileData(null)
   }
 

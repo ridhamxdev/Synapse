@@ -69,7 +69,6 @@ export function Sidebar({
   const [searchResults, setSearchResults] = useState<Conversation[]>([])
   const [isSearching, setIsSearching] = useState(false)
 
-  // Search through messages when query changes
   useEffect(() => {
     const searchMessages = async () => {
       if (!searchQuery.trim()) {
@@ -96,10 +95,8 @@ export function Sidebar({
     return () => clearTimeout(timeoutId)
   }, [searchQuery])
 
-  // Add search modal
   const handleSearchClose = () => setShowSearch(false)
   const handleResultSelect = (messageId: string) => {
-    // Handle message selection
     setShowSearch(false)
   }
 
@@ -279,7 +276,6 @@ export function Sidebar({
         )}
       </ScrollArea>
 
-      {/* Dark Mode Toggle at bottom */}
       <div className={`p-4 border-t flex-shrink-0 transition-colors duration-300 ${
         theme === 'dark' ? 'border-slate-700' : 'border-slate-200'
       }`}>
@@ -287,8 +283,7 @@ export function Sidebar({
           <DarkModeToggle />
         </div>
       </div>
-
-      {/* Search modal */}
+      
       {showSearch && (
         <MessageSearch
           conversationId={selectedConversation || ''}

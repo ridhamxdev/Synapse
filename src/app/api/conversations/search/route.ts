@@ -27,7 +27,6 @@ export async function GET(req: NextRequest) {
 
     const searchTerm = query.trim()
     
-    // First, get all conversations the user has access to
     const userConversations = await prisma.conversationUser.findMany({
       where: { userId: currentDbUser.id },
       include: {
@@ -72,19 +71,18 @@ export async function GET(req: NextRequest) {
                 }
               },
               orderBy: { createdAt: 'desc' },
-              take: 1 // Get the most recent matching message
+              take: 1
             }
           }
         }
       }
     })
 
-    // Filter conversations that have matching messages
     const conversationsWithMatches = userConversations
       .filter(uc => uc.conversation.messages.length > 0)
       .map(uc => {
         const conversation = uc.conversation
-        const matchingMessage = conversation.messages[0] // Most recent matching message
+        const matchingMessage = conversation.messages[0]
         
         return {
           id: conversation.id,
@@ -98,14 +96,14 @@ export async function GET(req: NextRequest) {
             senderImageUrl: matchingMessage.sender.imageUrl,
             messageId: matchingMessage.id
           },
-          unreadCount: 0, // You might want to calculate this separately
-          isOnline: false, // You might want to calculate this separately
+          unreadCount: 0,
+          isOnline: false,
           participants: conversation.users.map((cu: any) => ({
             id: cu.user.clerkId,
             name: cu.user.name,
             imageUrl: cu.user.imageUrl
           })),
-          matchCount: conversation.messages.length // Number of matching messages
+          matchCount: conversation.messages.length
         }
       })
       .sort((a, b) => new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime())

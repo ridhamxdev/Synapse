@@ -12,7 +12,6 @@ export async function PUT(req: NextRequest) {
     const body = await req.json()
     const { name, bio, phone, imageUrl } = body
 
-    // Update user in database
     const updatedUser = await prisma.user.update({
       where: { clerkId: user.id },
       data: {
@@ -47,19 +46,16 @@ export async function GET(req: NextRequest) {
     let dbUser
 
     if (userId) {
-      // If userId is provided, try to find by database ID first, then by clerkId
       dbUser = await prisma.user.findUnique({
         where: { id: userId }
       })
 
-      // If not found by ID, try by clerkId
       if (!dbUser) {
         dbUser = await prisma.user.findUnique({
           where: { clerkId: userId }
         })
       }
     } else {
-      // If no userId provided, fetch current user's profile
       dbUser = await prisma.user.findUnique({
         where: { clerkId: user.id }
       })

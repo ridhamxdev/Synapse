@@ -49,14 +49,12 @@ export function MessageInputLocal({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [replyTo, setReplyTo] = useState<any>(null)
 
-  // Sync external reply trigger from parent (reply action on a bubble)
   useEffect(() => {
     if (externalReplyTo) {
       setReplyTo(externalReplyTo)
     }
   }, [externalReplyTo])
   
-  // Voice recording states
   const [isRecording, setIsRecording] = useState(false)
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
   const [recordingTime, setRecordingTime] = useState(0)
@@ -107,7 +105,6 @@ export function MessageInputLocal({
     }
   }, [message, socket, conversationId, user?.id, replyTo, onTyping, onOptimisticMessage, disabled])
 
-  // Voice recording functions
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -212,7 +209,6 @@ export function MessageInputLocal({
         const fileUrl = result.url
         const fileName = result.name
         
-        // Create message with image
         const messageData = {
           conversationId,
           content: message || 'Image',
@@ -249,7 +245,6 @@ export function MessageInputLocal({
       console.error('Image upload error:', error)
     } finally {
       setIsUploading(false)
-      // Reset file input
       if (imageInputRef.current) {
         imageInputRef.current.value = ''
       }
@@ -275,7 +270,6 @@ export function MessageInputLocal({
         const fileUrl = result.url
         const fileName = result.name
         
-        // Create message with file
         const messageData = {
           conversationId,
           content: message || fileName,
@@ -312,7 +306,6 @@ export function MessageInputLocal({
       console.error('File upload error:', error)
     } finally {
       setIsUploading(false)
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -326,7 +319,6 @@ export function MessageInputLocal({
     inputRef.current?.focus()
   }
 
-  // Add click outside handler for emoji picker
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;

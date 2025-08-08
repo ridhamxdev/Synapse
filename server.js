@@ -8,7 +8,6 @@ const dev = process.env.NODE_ENV !== 'production'
 const hostname = 'localhost'
 const port = process.env.PORT || 3000
 
-// Get local IP address for network access
 const os = require('os')
 function getLocalIP() {
   const interfaces = os.networkInterfaces()
@@ -25,7 +24,6 @@ function getLocalIP() {
 
 const localIP = getLocalIP()
 
-// Display network information
 function displayNetworkInfo() {
   console.log('\n🌐 Network Information:')
   console.log('='.repeat(50))
@@ -54,7 +52,6 @@ app.prepare().then(() => {
         return res.end('Bad Request')
       }
       
-      // Add CORS headers for all requests
       res.setHeader('Access-Control-Allow-Origin', '*')
       res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization')
@@ -64,7 +61,6 @@ app.prepare().then(() => {
         return res.end()
       }
       
-      // Health check endpoint
       if (req.url === '/health') {
         res.setHeader('Content-Type', 'application/json')
         return res.end(JSON.stringify({
@@ -76,7 +72,6 @@ app.prepare().then(() => {
         }))
       }
       
-      // Server info endpoint
       if (req.url === '/server-info') {
         res.setHeader('Content-Type', 'application/json')
         return res.end(JSON.stringify({
@@ -109,7 +104,6 @@ app.prepare().then(() => {
         'http://127.0.0.1:3001',
         `http://${localIP}:3000`,
         `http://${localIP}:3001`,
-        // Common local network ranges
         'http://192.168.0.1:3000',
         'http://192.168.0.2:3000',
         'http://192.168.0.100:3000',
@@ -132,7 +126,6 @@ app.prepare().then(() => {
         'http://10.0.0.103:3000',
         'http://10.0.0.104:3000',
         'http://10.0.0.105:3000',
-        // Allow all origins in development
         ...(dev ? ['*'] : [])
       ],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -148,7 +141,6 @@ app.prepare().then(() => {
     console.error('Socket.io connection error:', err)
   })
 
-  // Add error handling for the server
   httpServer.on('error', (err) => {
     console.error('HTTP Server error:', err)
   })
@@ -167,7 +159,6 @@ app.prepare().then(() => {
       activeUsers.set(userId, { socketId: socket.id, userName, userImage })
       userHeartbeats.set(userId, Date.now())
       
-      // Join user's personal room for receiving updates
       socket.join(`user:${userId}`)
       
       try {
@@ -177,7 +168,7 @@ app.prepare().then(() => {
           create: {
             clerkId: userId,
             name: userName || 'Unknown User',
-            email: '', // Will be updated by sync
+            email: '',
             isOnline: true,
             lastSeen: new Date()
           }
@@ -205,11 +196,9 @@ app.prepare().then(() => {
       const { conversationId, id } = data
       if (!conversationId) return socket.emit('message-error', { error: 'Invalid conversation ID' })
       
-      // Broadcast the message to all users in the conversation (except sender)
       socket.to(`conversation:${conversationId}`).emit('message:new', data)
       
       try {
-        // Get conversation details and update last message
         const conv = await prisma.conversation.findUnique({
           where: { id: conversationId },
           include: {
@@ -238,7 +227,7 @@ app.prepare().then(() => {
             updatedAt: conv.updatedAt
           }
           
-          // Emit conversation update to all users in the conversation
+
           conv.users.forEach(({ user }) => {
             io.to(`user:${user.clerkId}`).emit('conversation:updated', updateData)
           })
