@@ -135,7 +135,7 @@ export function MessageSearch({ conversationId, onResultSelect, onClose }: Messa
                 >
                   <div className="flex items-start space-x-3">
                     <img
-                      src={result.sender.imageUrl || '/default-avatar.png'}
+                      src={result.sender.imageUrl || '/default-avatar.svg'}
                       alt={result.sender.name}
                       className="w-8 h-8 rounded-full flex-shrink-0"
                     />

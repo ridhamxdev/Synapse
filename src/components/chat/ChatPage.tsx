@@ -10,7 +10,7 @@ import { UserProfile } from '@/components/chat/UserProfile'
 
 export function ChatPage() {
   const { user, isLoaded } = useUserSync()
-  const socket = useSocket()
+  const { socket, isConnected } = useSocket()
   const [selectedConversation, setSelectedConversation] = useState<{
     id: string
     name?: string
@@ -47,14 +47,14 @@ export function ChatPage() {
             }
           } }
           activePanel={activePanel}
-          onPanelChange={setActivePanel} conversations={[]} isLoadingConversations={false} isConnected={false}   />
+          onPanelChange={setActivePanel} conversations={[]} isLoadingConversations={false} isConnected={isConnected}   />
       </div>
       <div className="flex-1 flex flex-col">
         {activePanel === 'chat' && selectedConversation && (
           <ChatWindow
             conversation={selectedConversation}
             socket={socket} 
-            isConnected={false} 
+            isConnected={isConnected} 
           />
         )}
         {activePanel === 'chat' && !selectedConversation && (

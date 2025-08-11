@@ -81,18 +81,16 @@ export function ConversationList({
     )
   }
 
-  const formatLastMessageTime = (timestamp: string) => {
+  const formatLastMessageTime = (timestamp?: string) => {
+    if (!timestamp) return ''
     const date = new Date(timestamp)
+    if (Number.isNaN(date.getTime())) return ''
     const now = new Date()
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-    
-    if (diffInHours < 24) {
-      return format(date, 'HH:mm')
-    } else if (diffInHours < 168) {
-      return format(date, 'EEE')
-    } else {
-      return format(date, 'MMM d')
-    }
+
+    if (diffInHours < 24) return format(date, 'HH:mm')
+    if (diffInHours < 168) return format(date, 'EEE')
+    return format(date, 'MMM d')
   }
 
   const truncateMessage = (message: string, maxLength: number = 30) => {
@@ -157,7 +155,7 @@ export function ConversationList({
             <div className="flex items-center space-x-3 relative z-10 py-2">
               <div className="relative flex-shrink-0">
                 <img
-                  src={displayImage || '/default-avatar.png'}
+                  src={displayImage || '/default-avatar.svg'}
                   alt={displayName}
                   className={`w-12 h-12 rounded-full object-cover transition-all duration-300 ${
                     isSelected 
@@ -213,7 +211,7 @@ export function ConversationList({
                       <div className="flex items-center gap-2 mb-1">
                         <div className="flex items-center gap-2">
                           <img
-                            src={conv.lastMessage.senderImageUrl || '/default-avatar.png'}
+                            src={conv.lastMessage.senderImageUrl || '/default-avatar.svg'}
                             alt={conv.lastMessage.senderId === user?.id ? 'You' : conv.lastMessage.senderName}
                             className="w-4 h-4 rounded-full object-cover"
                           />

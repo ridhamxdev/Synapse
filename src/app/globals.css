@@ -833,3 +833,11 @@ button:focus-visible {
   z-index: 1000;
   position: absolute;
 }
+
+/* Prevent input bar jump on send: keep layout height stable */
+.chat-input-stable {
+  min-height: 72px; /* matches input + buttons area */
+  display: flex;
+  align-items: center;
+  /* border:none; */
+}

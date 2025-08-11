@@ -34,7 +34,6 @@ export function VoiceMessage({ fileUrl, content, fileSize, isOwn }: VoiceMessage
       
       const updateTime = () => setCurrentTime(audio.currentTime)
       const updateDuration = () => {
-        console.log('Audio duration:', audio.duration, 'Ready state:', audio.readyState)
         if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
           setDuration(audio.duration)
           setIsLoading(false)
@@ -42,14 +41,12 @@ export function VoiceMessage({ fileUrl, content, fileSize, isOwn }: VoiceMessage
       }
       const handleEnded = () => setIsPlaying(false)
       const handleCanPlay = () => {
-        console.log('Can play event - duration:', audio.duration)
         if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
           setDuration(audio.duration)
           setIsLoading(false)
         }
       }
-      const handleError = (e: Event) => {
-        console.error('Audio error:', e)
+      const handleError = (_e: Event) => {
         setHasError(true)
         setIsLoading(false)
       }
@@ -74,7 +71,6 @@ export function VoiceMessage({ fileUrl, content, fileSize, isOwn }: VoiceMessage
 
       timeoutRef.current = setTimeout(() => {
         if (isLoading) {
-          console.log('Audio loading timeout - using content fallback')
           setIsLoading(false)
           if (contentDuration > 0) {
             setDuration(contentDuration)
@@ -93,7 +89,7 @@ export function VoiceMessage({ fileUrl, content, fileSize, isOwn }: VoiceMessage
         }
       }
     }
-  }, [fileUrl, content, isLoading])
+  }, [fileUrl, content])
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -217,13 +213,9 @@ export function VoiceMessage({ fileUrl, content, fileSize, isOwn }: VoiceMessage
          preload="metadata"
          crossOrigin="anonymous"
          onLoadedMetadata={() => {
-           console.log('onLoadedMetadata - duration:', audioRef.current?.duration)
            if (audioRef.current && audioRef.current.duration && isFinite(audioRef.current.duration) && audioRef.current.duration > 0) {
              setDuration(audioRef.current.duration)
            }
-         }}
-         onError={(e) => {
-           console.error('Audio element error:', e)
          }}
        />
       

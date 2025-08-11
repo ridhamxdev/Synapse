@@ -337,7 +337,7 @@ export function MessageInputLocal({
   }, [showEmojiPicker]);
 
   return (
-    <Card className="p-4 border-t relative">
+    <Card className="p-4 relative chat-input-stable border-0 shadow-none">
       {replyTo && (
         <div className="mb-3 p-2 bg-muted rounded-lg relative">
           <div className={`text-sm ${theme === 'dark' ? 'text-white' : 'text-muted-foreground'}`}>
@@ -372,7 +372,7 @@ export function MessageInputLocal({
         </div>
       )}
 
-      <div className="flex items-end gap-2">
+      <div className="flex items-end gap-2 h-16">
         <div className="flex-1 relative">
           <Textarea
             ref={inputRef as Ref<HTMLTextAreaElement>}
@@ -383,7 +383,7 @@ export function MessageInputLocal({
             }}
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
-            className={`min-h-[40px] max-h-[120px] resize-none pr-20 ${
+            className={`h-12 resize-none overflow-y-auto pr-20 ${
               theme === 'dark' ? 'text-white placeholder-white/70' : ''
             }`}
             disabled={disabled || isUploading}

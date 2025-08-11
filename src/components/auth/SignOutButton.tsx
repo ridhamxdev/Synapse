@@ -28,11 +28,11 @@ export function SignOutButton({
       sessionStorage.clear()
 
       await signOut({
-        redirectUrl: '/sign-in'
+        redirectUrl: '/'
       })
 
       toast.success('Signed out successfully')
-      router.push('/sign-in')
+      router.push('/')
       router.refresh()
 
     } catch (error) {

@@ -74,6 +74,11 @@ export default function MessageBubble({ message, isOwn, onReply, onForward }: Pr
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [showEmojiPicker])
 
+
+  useEffect(() => {
+    setReactions(((message as any).reactions as Reaction[]) || [])
+  }, [(message as any).reactions, message.id])
+
   const getStatusIcon = () => {
     if (!isOwn) return null
     if (message.isRead) return <span className="text-blue-300 text-xs">✓✓</span>
@@ -86,7 +91,7 @@ export default function MessageBubble({ message, isOwn, onReply, onForward }: Pr
       <div className={`group flex items-end gap-2 max-w-[70%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
         {!isOwn && (
           <img
-            src={message.sender.imageUrl || '/default-avatar.png'}
+            src={message.sender.imageUrl || '/default-avatar.svg'}
             alt={message.sender.name}
             className="w-8 h-8 rounded-full flex-shrink-0 message-avatar shadow-sm"
           />
@@ -117,7 +122,9 @@ export default function MessageBubble({ message, isOwn, onReply, onForward }: Pr
           )}
 
           {message.type === 'TEXT' && (
-            <div className={`text-sm break-words text-left ${isOwn ? 'leading-tight' : 'leading-relaxed'}`}>
+            <div className={`text-sm break-words whitespace-pre-wrap text-left ${
+              isOwn ? 'leading-tight' : 'leading-relaxed'
+            }`}>
               {message.content}
             </div>
           )}
@@ -207,14 +214,24 @@ export default function MessageBubble({ message, isOwn, onReply, onForward }: Pr
                 height={380}
                 onEmojiClick={async (emojiData) => {
                   try {
-                    const res = await fetch(`/api/conversations/${message.conversationId || ''}/messages/${message.id}`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ emoji: (emojiData as any).emoji })
-                    })
-                    if (res.ok) {
-                      const data = await res.json()
-                      setReactions(data.reactions || [])
+                    const chosen = (emojiData as any).emoji as string
+                    setReactions(prev => [...prev, { id: Math.random().toString(36).slice(2), emoji: chosen, userId: 'self' }])
+
+                    const socket: any = (window as any).appSocket
+                    if (socket && typeof socket.emit === 'function') {
+                      socket.emit('reaction:toggle', {
+                        conversationId: message.conversationId,
+                        messageId: message.id,
+                        emoji: chosen,
+                      })
+                    } else {
+                      await fetch(`/api/conversations/${message.conversationId || ''}/messages/${message.id}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ emoji: chosen })
+                      }).then(r => r.ok ? r.json() : null).then(data => {
+                        if (data && data.reactions) setReactions(data.reactions)
+                      })
                     }
                   } finally {
                     setShowEmojiPicker(false)

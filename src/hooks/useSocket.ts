@@ -39,7 +39,7 @@ export const useSocket = () => {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      forceNew: true,
+      forceNew: false,
       autoConnect: true,
       auth: {
         userId: user.id,
@@ -60,6 +60,8 @@ export const useSocket = () => {
         userImage: user.imageUrl || null,
         timestamp: Date.now()
       })
+
+      ;(window as any).appSocket = socketInstance
     })
 
     socketInstance.on('connect_error', (error) => {
@@ -119,6 +121,9 @@ export const useSocket = () => {
       if (socketInstance) {
         socketInstance.removeAllListeners()
         socketInstance.disconnect()
+      }
+      if ((window as any).appSocket === socketInstance) {
+        (window as any).appSocket = null
       }
       setSocket(null)
       setIsConnected(false)

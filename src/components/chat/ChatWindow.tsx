@@ -147,15 +147,20 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
 
   useEffect(() => {
     if (!socket || !conversation.id) return
-    socket.emit('join-conversation', conversation.id)
+    const convId = conversation.id
+    socket.emit('join-conversation', convId)
     socket.on('message:new', handleNewMessage)
     socket.on('typing:start', handleTypingStart)
     socket.on('typing:stop', handleTypingStop)
+    socket.on('reaction:update', ({ messageId, reactions }: { messageId: string; reactions: any[] }) => {
+      setMessages(prev => prev.map(m => (m.id === messageId ? { ...m, reactions } as any : m)))
+    })
     return () => {
       socket.off('message:new', handleNewMessage)
       socket.off('typing:start', handleTypingStart)
       socket.off('typing:stop', handleTypingStop)
-      socket.emit('leave-conversation', conversation.id)
+      socket.off('reaction:update')
+      socket.emit('leave-conversation', convId)
     }
   }, [socket, conversation.id, handleNewMessage, handleTypingStart, handleTypingStop])
 
@@ -385,7 +390,7 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
                 .map((c) => (
                   <div key={c.id} className="flex items-center justify-between rounded-md border p-2">
                     <div className="flex items-center gap-2">
-                      <img src={c.imageUrl || '/default-avatar.png'} className="h-8 w-8 rounded-full" />
+                <img src={c.imageUrl || '/default-avatar.svg'} className="h-8 w-8 rounded-full" />
                       <div>
                         <div className="text-sm font-medium">{c.name}</div>
                         {c.lastMessage?.content && (

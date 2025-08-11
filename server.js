@@ -9,6 +9,28 @@ const hostname = 'localhost'
 const port = process.env.PORT || 3000
 
 const os = require('os')
+
+const ANSI = {
+  reset: '\x1b[0m',
+  dim: '\x1b[2m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m'
+}
+
+function time() {
+  return new Date().toISOString()
+}
+
+const log = {
+  info: (...args) => console.log(`${ANSI.cyan}[INFO]${ANSI.reset} ${ANSI.dim}${time()}${ANSI.reset} -`, ...args),
+  warn: (...args) => console.warn(`${ANSI.yellow}[WARN]${ANSI.reset} ${ANSI.dim}${time()}${ANSI.reset} -`, ...args),
+  error: (...args) => console.error(`${ANSI.red}[ERROR]${ANSI.reset} ${ANSI.dim}${time()}${ANSI.reset} -`, ...args),
+  ready: (...args) => console.log(`${ANSI.green}[READY]${ANSI.reset} ${ANSI.dim}${time()}${ANSI.reset} -`, ...args)
+}
 function getLocalIP() {
   const interfaces = os.networkInterfaces()
   for (const name of Object.keys(interfaces)) {
@@ -25,19 +47,12 @@ function getLocalIP() {
 const localIP = getLocalIP()
 
 function displayNetworkInfo() {
-  console.log('\n🌐 Network Information:')
-  console.log('='.repeat(50))
-  console.log(`📱 Mobile/Tablet Access: http://${localIP}:${port}`)
-  console.log(`💻 Desktop Access: http://localhost:${port}`)
-  console.log(`🔌 Socket.IO Endpoint: ws://${localIP}:${port}`)
-  console.log(`📊 Health Check: http://${localIP}:${port}/health`)
-  console.log(`ℹ️  Server Info: http://${localIP}:${port}/server-info`)
-  console.log('='.repeat(50))
-  console.log('💡 Tips:')
-  console.log('• Make sure your firewall allows connections on port 3000')
-  console.log('• Other devices must be on the same network')
-  console.log('• Use the Network URL to access from mobile/tablet')
-  console.log('='.repeat(50))
+  log.info('Network information:')
+  log.info(`Local:   http://localhost:${port}`)
+  log.info(`Network: http://${localIP}:${port}`)
+  log.info(`Socket:  ws://${localIP}:${port}`)
+  log.info(`Health:  http://${localIP}:${port}/health`)
+  log.info(`Info:    http://${localIP}:${port}/server-info`)
 }
 
 const app = next({ dev, hostname, port })
@@ -89,7 +104,7 @@ app.prepare().then(() => {
       const parsedUrl = parse(req.url, true)
       await handle(req, res, parsedUrl)
     } catch (error) {
-      console.error('Request handling error:', error)
+      log.error('Request handling error:', error)
       res.statusCode = 500
       res.end('Internal Server Error')
     }
@@ -138,19 +153,19 @@ app.prepare().then(() => {
   const userHeartbeats = new Map()
 
   io.engine.on('connection_error', err => {
-    console.error('Socket.io connection error:', err)
+    log.error('Socket.io connection error:', err)
   })
 
   httpServer.on('error', (err) => {
-    console.error('HTTP Server error:', err)
+    log.error('HTTP Server error:', err)
   })
 
   io.on('connect_error', (err) => {
-    console.error('Socket.io connect error:', err)
+    log.error('Socket.io connect error:', err)
   })
 
   io.on('connection', socket => {
-    console.log(`🔌 New socket connection: ${socket.id}`)
+    log.info(`Socket connected: ${socket.id}`)
     
     socket.on('authenticate', async data => {
       const { userId, userName, userImage } = data
@@ -174,7 +189,7 @@ app.prepare().then(() => {
           }
         })
       } catch (e) {
-        console.error('User upsert error:', e)
+        log.error('User upsert error:', e)
       }
       const online = Array.from(activeUsers.entries()).map(([id, info]) => ({
         userId: id, userName: info.userName, userImage: info.userImage, isOnline: true
@@ -184,12 +199,20 @@ app.prepare().then(() => {
     })
 
     socket.on('join-conversation', convId => {
-      if (convId) {
+      if (!convId) return
+      try {
         socket.join(`conversation:${convId}`)
+      } catch (e) {
+        log.error('join-conversation error:', e)
       }
     })
     socket.on('leave-conversation', convId => {
-      if (convId) socket.leave(`conversation:${convId}`)
+      if (!convId) return
+      try {
+        socket.leave(`conversation:${convId}`)
+      } catch (e) {
+        log.error('leave-conversation error:', e)
+      }
     })
 
     socket.on('message:send', async data => {
@@ -233,7 +256,56 @@ app.prepare().then(() => {
           })
         }
       } catch (e) {
-        console.error('Broadcast error:', e)
+        log.error('Broadcast error:', e)
+      }
+    })
+
+    socket.on('reaction:toggle', async (data, ack) => {
+      try {
+        const { conversationId, messageId, emoji } = data || {}
+        if (!conversationId || !messageId || !emoji) {
+          if (ack) ack({ ok: false, error: 'Invalid payload' })
+          return
+        }
+
+        const currentUserClerkId = socket.userId
+        if (!currentUserClerkId) {
+          if (ack) ack({ ok: false, error: 'Unauthorized' })
+          return
+        }
+
+        const currentDbUser = await prisma.user.findUnique({ where: { clerkId: currentUserClerkId } })
+        if (!currentDbUser) {
+          if (ack) ack({ ok: false, error: 'User not found' })
+          return
+        }
+
+        const access = await prisma.conversationUser.findFirst({ where: { conversationId, userId: currentDbUser.id } })
+        if (!access) {
+          if (ack) ack({ ok: false, error: 'Access denied' })
+          return
+        }
+
+        const existing = await prisma.messageReaction.findUnique({
+          where: { messageId_userId_emoji: { messageId, userId: currentDbUser.id, emoji } }
+        })
+
+        if (existing) {
+          await prisma.messageReaction.delete({ where: { id: existing.id } })
+        } else {
+          await prisma.messageReaction.create({ data: { messageId, userId: currentDbUser.id, emoji } })
+        }
+
+        const reactions = await prisma.messageReaction.findMany({
+          where: { messageId },
+          select: { id: true, emoji: true, userId: true }
+        })
+
+        io.to(`conversation:${conversationId}`).emit('reaction:update', { messageId, reactions })
+        if (ack) ack({ ok: true, reactions })
+      } catch (e) {
+        log.error('reaction:toggle error', e)
+        if (ack) ack({ ok: false, error: 'Server error' })
       }
     })
 
@@ -260,7 +332,7 @@ app.prepare().then(() => {
 
     socket.on('disconnect', async () => {
       const uid = socket.userId
-      console.log(`🔌 Socket disconnected: ${socket.id} (User: ${uid || 'Unknown'})`)
+      log.info(`Socket disconnected: ${socket.id} (User: ${uid || 'Unknown'})`)
       if (uid) {
         activeUsers.delete(uid)
         userHeartbeats.delete(uid)
@@ -277,7 +349,7 @@ app.prepare().then(() => {
             }
           })
         } catch (e) {
-          console.error('User disconnect upsert error:', e)
+          log.error('User disconnect upsert error:', e)
         }
         socket.broadcast.emit('user-offline', { userId: uid })
       }
@@ -305,16 +377,8 @@ app.prepare().then(() => {
 
   httpServer.listen(port, '0.0.0.0', err => {
     if (err) throw err
-    console.log('🚀 WhatsApp Clone Server Started!')
-    console.log('='.repeat(50))
-    console.log(`📍 Local: http://localhost:${port}`)
-    console.log(`🌐 Network: http://${localIP}:${port}`)
-    console.log(`🔌 Socket.IO: ws://${localIP}:${port}`)
-    console.log('='.repeat(50))
-    console.log('📱 Access from other devices using the Network URL above')
-    console.log('🔧 Development mode:', dev ? 'ON' : 'OFF')
-    console.log('⚡ Socket.IO server is ready for real-time messaging')
-    console.log('='.repeat(50))
+    log.ready('Server started')
+    log.info(`Environment: ${dev ? 'development' : 'production'}`)
     displayNetworkInfo()
   })
 })
