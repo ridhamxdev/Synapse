@@ -165,6 +165,48 @@ app.prepare().then(() => {
   })
 
   io.on('connection', socket => {
+    // Simple WebRTC signaling using Socket.IO on the same server
+    socket.on('webrtc:join', ({ roomId }) => {
+      if (!roomId) return
+      socket.join(`rtc:${roomId}`)
+      const room = io.sockets.adapter.rooms.get(`rtc:${roomId}`)
+      const size = room ? room.size : 0
+      if (size >= 2) {
+        io.to(`rtc:${roomId}`).emit('ready')
+      }
+    })
+
+    socket.on('webrtc:leave', ({ roomId }) => {
+      if (!roomId) return
+      socket.leave(`rtc:${roomId}`)
+    })
+
+    socket.on('webrtc:offer', ({ roomId, sdp }) => {
+      if (!roomId || !sdp) return
+      socket.to(`rtc:${roomId}`).emit('webrtc:offer', { sdp })
+    })
+
+    socket.on('webrtc:answer', ({ roomId, sdp }) => {
+      if (!roomId || !sdp) return
+      socket.to(`rtc:${roomId}`).emit('webrtc:answer', { sdp })
+    })
+
+    socket.on('webrtc:ice-candidate', ({ roomId, candidate }) => {
+      if (!roomId || !candidate) return
+      socket.to(`rtc:${roomId}`).emit('webrtc:ice-candidate', { candidate })
+    })
+
+    // Screen share state notifications (optional, for UI hints)
+    socket.on('webrtc:screen-share-start', ({ roomId }) => {
+      if (!roomId) return
+      socket.to(`rtc:${roomId}`).emit('webrtc:screen-share-start')
+    })
+
+    socket.on('webrtc:screen-share-stop', ({ roomId }) => {
+      if (!roomId) return
+      socket.to(`rtc:${roomId}`).emit('webrtc:screen-share-stop')
+    })
+
     log.info(`Socket connected: ${socket.id}`)
     
     socket.on('authenticate', async data => {
@@ -216,47 +258,108 @@ app.prepare().then(() => {
     })
 
     socket.on('message:send', async data => {
-      const { conversationId, id } = data
+      const { conversationId, id, isGroup } = data
       if (!conversationId) return socket.emit('message-error', { error: 'Invalid conversation ID' })
       
-      socket.to(`conversation:${conversationId}`).emit('message:new', data)
+      // Broadcast to appropriate room based on message type
+      if (isGroup) {
+        socket.to(`group:${conversationId}`).emit('message:new', data)
+      } else {
+        socket.to(`conversation:${conversationId}`).emit('message:new', data)
+      }
       
       try {
-        const conv = await prisma.conversation.findUnique({
-          where: { id: conversationId },
-          include: {
-            users: { 
-              select: { 
-                userId: true,
-                user: {
-                  select: {
-                    clerkId: true
+        if (isGroup) {
+          // Handle group message updates
+          const group = await prisma.group.findUnique({
+            where: { id: conversationId },
+            include: {
+              members: { 
+                select: { 
+                  userId: true,
+                  user: {
+                    select: {
+                      clerkId: true
+                    }
                   }
-                }
-              } 
-            },
-            messages: {
-              orderBy: { createdAt: 'desc' },
-              take: 1,
-              include: { sender: { select: { name: true } } }
+                } 
+              },
+              messages: {
+                orderBy: { createdAt: 'desc' },
+                take: 1,
+                include: { sender: { select: { name: true } } }
+              }
             }
-          }
-        })
-        
-        if (conv) {
-          const updateData = {
-            id: conv.id,
-            lastMessage: conv.messages[0],
-            updatedAt: conv.updatedAt
-          }
-          
-
-          conv.users.forEach(({ user }) => {
-            io.to(`user:${user.clerkId}`).emit('conversation:updated', updateData)
           })
+          
+          if (group) {
+            const updateData = {
+              id: group.id,
+              type: 'GROUP',
+              lastMessage: group.messages[0],
+              updatedAt: group.updatedAt
+            }
+            
+            group.members.forEach(({ user }) => {
+              io.to(`user:${user.clerkId}`).emit('conversation:updated', updateData)
+            })
+          }
+        } else {
+          // Handle direct conversation message updates
+          const conv = await prisma.conversation.findUnique({
+            where: { id: conversationId },
+            include: {
+              users: { 
+                select: { 
+                  userId: true,
+                  user: {
+                    select: {
+                      clerkId: true
+                    }
+                  }
+                } 
+              },
+              messages: {
+                orderBy: { createdAt: 'desc' },
+                take: 1,
+                include: { sender: { select: { name: true } } }
+              }
+            }
+          })
+          
+          if (conv) {
+            const updateData = {
+              id: conv.id,
+              type: 'DIRECT',
+              lastMessage: conv.messages[0],
+              updatedAt: conv.updatedAt
+            }
+            
+            conv.users.forEach(({ user }) => {
+              io.to(`user:${user.clerkId}`).emit('conversation:updated', updateData)
+            })
+          }
         }
       } catch (e) {
         log.error('Broadcast error:', e)
+      }
+    })
+
+    // Group rooms
+    socket.on('group:join', (groupId) => {
+      if (!groupId) return
+      try {
+        socket.join(`group:${groupId}`)
+      } catch (e) {
+        log.error('group:join error:', e)
+      }
+    })
+    socket.on('group:leave', (groupId) => {
+      if (!groupId) return
+      try {
+        socket.leave(`group:${groupId}`)
+      } catch (e) {
+        log.error('group:leave error:', e)
       }
     })
 

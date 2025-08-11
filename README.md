@@ -37,6 +37,10 @@ A modern, feature-rich messaging platform built with Next.js, TypeScript, and re
 - **Message History** - Persistent message storage
 - **Conversation Management** - Create and manage chat conversations
 - **Enhanced Message Bubbles** - Configurable styling for sender/receiver messages
+- **Group Chat Support** - Create and manage group conversations
+- **Group Management** - Add/remove members, assign admins, edit group info
+- **Group Permissions** - Role-based access control (Admin/Member)
+- **Group Info Panel** - View members, edit group details, leave group
 
 ### 📱 Media Sharing
 - **Image Uploads** - Drag & drop image sharing
@@ -67,6 +71,9 @@ A modern, feature-rich messaging platform built with Next.js, TypeScript, and re
 - **Smooth Animations** - Framer Motion-powered animations
 - **Loading States** - Elegant loading indicators
 - **Error Handling** - User-friendly error messages
+- **Group Creation Modal** - Beautiful modal for creating new groups
+- **Member Selection** - Search and select users to add to groups
+- **Group Avatars** - Custom group images and fallback icons
 
 ### 🔧 Technical Features
 - **TypeScript** - Full type safety
@@ -152,7 +159,7 @@ synapse/
 │   │   ├── 📁 chat/                     # Chat components
 │   │   │   ├── 📄 ChatApp.tsx           # Main chat application
 │   │   │   ├── 📄 ChatPage.tsx          # Chat page wrapper
-│   │   │   ├── 📄 ChatWindow.tsx        # Chat window with spotlight effects
+│   │   │   ├── 📄 ChatWindow.tsx        # Chat window + call buttons
 │   │   │   ├── 📄 ContactsPanel.tsx     # Contacts management
 │   │   │   ├── 📄 ConversationList.tsx  # Conversation listing
 │   │   │   ├── 📄 MessageBubble.tsx     # Enhanced message display
@@ -187,6 +194,8 @@ synapse/
 │   │       ├── 📄 synapse-banner.tsx    # Synapse branding component
 │   │       ├── 📄 tabs.tsx              # Tabs component
 │   │       ├── 📄 textarea.tsx          # Textarea component
+│   │   ├── 📁 call/                     # WebRTC call components
+│   │   │   └── 📄 CallModal.tsx         # Local/remote video, call controls, screenshare
 │   │       ├── 📄 ThemeToggle.tsx       # Theme switcher
 │   │       └── 📄 tracing-beam.tsx      # Tracing beam animation
 │   ├── 📁 contexts/                     # React contexts
@@ -231,6 +240,27 @@ synapse/
 - **MySQL** database
 - **Clerk** account for authentication
 
+## 👥 Group Chat Features
+
+### Creating Groups
+1. Navigate to the **Contacts** tab in the sidebar
+2. Click the **"New Group"** button
+3. Enter a group name and optional image URL
+4. Search and select members to add
+5. Click **"Create Group"** to finalize
+
+### Group Management
+- **Edit Group Info**: Click on group avatar/name to open group info panel
+- **Add Members**: Use the "Add Member" button in group info
+- **Leave Group**: Available in group info panel (admins can't leave if they're the only admin)
+- **Role Management**: Admins can edit group details and manage members
+
+### Group Chat Experience
+- **Group Messages**: All group members receive real-time messages
+- **Member List**: View all group participants with their roles
+- **Group Avatars**: Custom images or default group icon
+- **Admin Controls**: Only admins can modify group settings
+
 ### Installation
 
 1. **Clone the repository**
@@ -264,6 +294,12 @@ synapse/
    # Socket.io
    NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
    NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+   
+   # Groq (free-tier; recommended)
+   AI_PROVIDER=groq
+   GROQ_API_KEY=your_groq_key
+   GROQ_MODEL=llama3-8b-8192
 
    # Application
    NODE_ENV=development
@@ -521,10 +557,46 @@ NEXT_PUBLIC_APP_URL=https://your-domain.com
 - **UI Animations** - All Aceternity UI effects and interactions
 
 ### Browser Compatibility
-- **Chrome** - Full support
-- **Firefox** - Full support
-- **Safari** - Full support
+- **Chrome/Edge** - Full support (best for screen/tab audio sharing)
+- **Firefox** - Good support (tab audio capture may differ)
+- **Safari** - WebRTC supported; background behavior and tab audio share may be limited
 - **Edge** - Full support
+
+## 🎥 WebRTC Calls & Screenshare (Local Network)
+
+Synapse includes LAN-only audio/video calls and screen sharing using the built-in Socket.IO signaling in `server.js`. No paid services or external TURN are required for same Wi‑Fi/LAN.
+
+### Features
+- Two video panes (local and remote)
+- Start Camera/Mic, Call, End controls
+- Toggle Screen Share with optional system/tab audio
+- Audio-first capture (echoCancellation, noiseSuppression, autoGainControl)
+- Wake Lock to reduce throttling when minimized
+
+### How to use
+1. Open the same conversation in two tabs/devices on the same Wi‑Fi.
+2. Click Video (or Phone for audio-only) in the chat header.
+3. Click “Start Camera” (or “Start Mic”), then “Call”.
+4. On the second device/tab, open the modal and start the camera/mic; it will connect automatically.
+5. Click “Toggle Screen Share” to share the screen. Use “Screen Audio: On” to include tab/system audio when supported by the browser.
+
+### Background behavior
+- WebRTC streams generally continue in the background; UI rendering pauses.
+- Selecting “Entire screen” or a different app/window for sharing is more reliable than sharing the minimized tab itself.
+- A wake lock is requested during a call to reduce throttling; released on end.
+
+### Notes
+- Uses public STUN only; for WAN or symmetric NAT you’d need a TURN server (not included).
+- For multi-device LAN testing, open `http://YOUR_LAN_IP:3000` on both devices.
+
+## 🤖 AI Assistant
+
+The AI assistant supports either OpenAI or the free-tier Groq provider. Backend routes:
+- `POST /api/ai/assist` – rewrite and response variants with optional conversation context
+- `POST /api/ai/reply` – smart quick replies for a thread
+
+Default provider selection:
+- Set `AI_PROVIDER=groq` plus `GROQ_API_KEY` (recommended).
 
 ## 🤝 Contributing
 

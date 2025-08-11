@@ -15,7 +15,10 @@ import {
   Mic, 
   MicOff, 
   X,
-  Smile
+  Smile,
+  Wand2,
+  Sparkles,
+  Languages
 } from 'lucide-react'
 import EmojiPicker from 'emoji-picker-react'
 import { useUser } from '@clerk/nextjs'
@@ -23,6 +26,7 @@ import { Theme } from 'emoji-picker-react'
 
 interface MessageInputProps {
   conversationId: string
+  conversationType?: 'DIRECT' | 'GROUP'
   socket: any
   onTyping: (isTyping: boolean) => void
   onOptimisticMessage: (message: any) => void
@@ -34,6 +38,7 @@ interface MessageInputProps {
 
 export function MessageInputLocal({
   conversationId,
+  conversationType = 'DIRECT',
   socket,
   onTyping,
   onOptimisticMessage,
@@ -48,6 +53,13 @@ export function MessageInputLocal({
   const [isUploading, setIsUploading] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [replyTo, setReplyTo] = useState<any>(null)
+  const [isAiLoading, setIsAiLoading] = useState(false)
+  const [showAiPanel, setShowAiPanel] = useState(false)
+  const [aiVariants, setAiVariants] = useState<Array<{ label: string; text: string }>>([])
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
+  const [showTranslatePanel, setShowTranslatePanel] = useState(false)
+  const [translateTarget, setTranslateTarget] = useState('Hindi')
+  const [isTranslating, setIsTranslating] = useState(false)
 
   useEffect(() => {
     if (externalReplyTo) {
@@ -62,8 +74,10 @@ export function MessageInputLocal({
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const emojiPickerRef = useRef<HTMLDivElement>(null)
+  const aiPanelRef = useRef<HTMLDivElement>(null)
+  const translatePanelRef = useRef<HTMLDivElement>(null)
 
   const sendMessage = useCallback(async () => {
     if (!message.trim() || !socket || disabled || !user?.id) return
@@ -80,9 +94,15 @@ export function MessageInputLocal({
         senderId: user.id,
         replyToId: replyTo?.id,
         timestamp: new Date().toISOString(),
+        isGroup: conversationType === 'GROUP',
       }
 
-      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+      // Determine the correct API endpoint based on conversation type
+      const endpoint = conversationType === 'GROUP' 
+        ? `/api/groups/${conversationId}/messages`
+        : `/api/conversations/${conversationId}/messages`
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(messageData)
@@ -330,14 +350,96 @@ export function MessageInputLocal({
           !emojiPickerRef.current.contains(target)) {
         setShowEmojiPicker(false);
       }
+
+      if (showAiPanel && aiPanelRef.current && !aiPanelRef.current.contains(target)) {
+        setShowAiPanel(false)
+      }
+      if (showTranslatePanel && translatePanelRef.current && !translatePanelRef.current.contains(target)) {
+        setShowTranslatePanel(false)
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showEmojiPicker]);
+  }, [showEmojiPicker, showAiPanel]);
+
+  const handleAiClick = async () => {
+    if (!conversationId || isAiLoading) return
+    setIsAiLoading(true)
+    setShowAiPanel(true)
+    try {
+      if (message.trim()) {
+        const res = await fetch('/api/ai/assist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: message, conversationId, numVariants: 3 })
+        })
+        if (!res.ok) throw new Error('AI assist failed')
+        const data = await res.json()
+        setAiVariants(Array.isArray(data?.variants) ? data.variants : [])
+        setAiSuggestions([])
+      } else {
+        const res = await fetch('/api/ai/reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversationId, numSuggestions: 3 })
+        })
+        if (!res.ok) throw new Error('AI suggestions failed')
+        const data = await res.json()
+        setAiSuggestions(Array.isArray(data?.suggestions) ? data.suggestions : [])
+        setAiVariants([])
+      }
+    } catch (e) {
+      toast.error('AI is unavailable right now')
+      setShowAiPanel(false)
+    } finally {
+      setIsAiLoading(false)
+    }
+  }
+
+  const insertText = (text: string) => {
+    setMessage(text)
+    setShowAiPanel(false)
+    setShowTranslatePanel(false)
+    inputRef.current?.focus()
+  }
+
+  const handleTranslate = async () => {
+    if (!message.trim() || isTranslating) return
+    setIsTranslating(true)
+    try {
+      const res = await fetch('/api/ai/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: message, targetLanguage: translateTarget })
+      })
+      if (!res.ok) throw new Error('Translate failed')
+      const data = await res.json()
+      if (data?.translated) {
+        setMessage(data.translated)
+        setShowTranslatePanel(false)
+      }
+    } catch (e) {
+      toast.error('Translation unavailable right now')
+    } finally {
+      setIsTranslating(false)
+    }
+  }
+
+  // Auto-resize the textarea as content grows to avoid scrollbars
+  const resizeTextarea = useCallback(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [])
+
+  useEffect(() => {
+    resizeTextarea()
+  }, [message, resizeTextarea])
 
   return (
-    <Card className="p-4 relative chat-input-stable border-0 shadow-none">
+    <Card className="px-2 py-3 relative chat-input-stable border-0 shadow-none">
       {replyTo && (
         <div className="mb-3 p-2 bg-muted rounded-lg relative">
           <div className={`text-sm ${theme === 'dark' ? 'text-white' : 'text-muted-foreground'}`}>
@@ -372,40 +474,27 @@ export function MessageInputLocal({
         </div>
       )}
 
-      <div className="flex items-end gap-2 h-16">
-        <div className="flex-1 relative">
+      <div className="flex items-end gap-2 w-full">
+        <div className="flex-1 min-w-0 relative">
           <Textarea
             ref={inputRef as Ref<HTMLTextAreaElement>}
             value={message}
             onChange={(e) => {
               setMessage(e.target.value)
               onTyping(e.target.value.length > 0)
+              // ensure it grows as user types
+              requestAnimationFrame(resizeTextarea)
             }}
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
-            className={`h-12 resize-none overflow-y-auto pr-20 ${
+            className={`block w-full min-h-[40px] text-base leading-6 resize-none overflow-hidden ${
               theme === 'dark' ? 'text-white placeholder-white/70' : ''
             }`}
             disabled={disabled || isUploading}
           />
-          
-          <div className="absolute bottom-2 right-2 flex items-center gap-1">
-                         <Button
-               variant="ghost"
-               size="sm"
-               className="h-8 w-8 p-0"
-               onClick={() => {
-                 console.log('Emoji button clicked (Local), current state:', showEmojiPicker)
-                 setShowEmojiPicker(!showEmojiPicker)
-               }}
-               disabled={disabled || isUploading}
-             >
-               <Smile className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
-             </Button>
-          </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-shrink-0 min-w-[256px] pl-1">
           <input
             ref={imageInputRef}
             type="file"
@@ -422,6 +511,50 @@ export function MessageInputLocal({
             className="hidden"
             disabled={disabled || isUploading}
           />
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-10 w-10 p-0"
+            onClick={handleAiClick}
+            disabled={disabled || isUploading || isAiLoading}
+            title={message.trim() ? 'Rewrite with AI' : 'Smart reply suggestions'}
+          >
+            {isAiLoading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500" />
+            ) : message.trim() ? (
+              <Wand2 className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
+            ) : (
+              <Sparkles className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
+            )}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-10 w-10 p-0"
+            onClick={() => setShowTranslatePanel((v) => !v)}
+            disabled={disabled || isUploading}
+            title="Translate draft"
+          >
+            {isTranslating ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500" />
+            ) : (
+              <Languages className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
+            )}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-10 w-10 p-0"
+            onClick={() => {
+              setShowEmojiPicker(!showEmojiPicker)
+            }}
+            disabled={disabled || isUploading}
+          >
+            <Smile className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
+          </Button>
 
                      <Button
              variant="ghost"
@@ -443,7 +576,7 @@ export function MessageInputLocal({
              <FileText className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
            </Button>
 
-                     <Button
+          <Button
              variant="ghost"
              size="sm"
              className="h-10 w-10 p-0"
@@ -467,8 +600,52 @@ export function MessageInputLocal({
         </div>
       </div>
 
+      {showAiPanel && (
+        <div ref={aiPanelRef} className={`absolute bottom-24 right-4 z-50 w-[min(520px,90vw)] rounded-lg border shadow-lg p-3 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+          {aiVariants.length > 0 && (
+            <div className="space-y-2">
+              {aiVariants.map((v, idx) => (
+                <div key={idx} className={`p-2 rounded-md border ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className={`text-sm ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{v.text}</div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Button size="sm" className="h-7 px-2 text-xs" variant="secondary" onClick={() => insertText(v.text)}>Insert</Button>
+                      <Button size="sm" className="h-7 px-2 text-xs" variant="ghost" onClick={() => { navigator.clipboard.writeText(v.text); toast.success('Copied') }}>Copy</Button>
+                    </div>
+                  </div>
+                  <div className={`mt-1 text-[11px] uppercase tracking-wide ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{v.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {aiSuggestions.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {aiSuggestions.map((s, idx) => (
+                <button key={idx} className={`text-left text-sm rounded-md px-3 py-2 border hover:bg-muted ${theme === 'dark' ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-800'}`} onClick={() => insertText(s)}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+          {aiVariants.length === 0 && aiSuggestions.length === 0 && !isAiLoading && (
+            <div className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>No suggestions right now</div>
+          )}
+        </div>
+      )}
+
+      {showTranslatePanel && (
+        <div ref={translatePanelRef} className={`absolute bottom-24 right-4 z-50 w-[min(360px,90vw)] rounded-lg border shadow-lg p-3 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+          <div className="text-sm mb-2">Translate to</div>
+          <div className="flex items-center gap-2">
+            <Input value={translateTarget} onChange={(e) => setTranslateTarget(e.target.value)} placeholder="e.g., Hindi, Spanish, French" className="flex-1" />
+            <Button size="sm" onClick={handleTranslate} disabled={isTranslating || !message.trim()}>Translate</Button>
+          </div>
+          <div className="mt-2 text-xs text-muted-foreground">Your current draft will be translated and replaced.</div>
+        </div>
+      )}
+
       {showEmojiPicker && (
-        <div ref={emojiPickerRef} className="absolute bottom-full right-0 mb-2 z-50 emoji-picker-container">
+        <div ref={emojiPickerRef} className="absolute bottom-full left-2 mb-2 z-50 emoji-picker-container">
           <EmojiPicker 
             onEmojiClick={onEmojiClick}
             theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}

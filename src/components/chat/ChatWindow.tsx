@@ -5,12 +5,14 @@ import { useUser } from '@clerk/nextjs'
 import { useTheme } from '@/contexts/ThemeContext'
 import { MessageInputLocal } from './MessageInputLocal'
 import { Button } from '@/components/ui/button'
-import { Video, Phone, Monitor } from 'lucide-react'
+import { Video, Phone, Monitor, Users } from 'lucide-react'
+import { CallModal } from '@/components/call/CallModal'
 import { format } from 'date-fns'
 import MessageBubble from './MessageBubble'
 import { TypingIndicator } from './TypingIndicator'
 import { Spotlight } from '@/components/ui/spotlight'
 import { UserProfileDrawer } from './UserProfileDrawer'
+import { GroupInfoDrawer } from './GroupInfoDrawer'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 
@@ -40,6 +42,7 @@ interface Message {
 interface ChatWindowProps {
   conversation: {
     id: string
+    type?: 'DIRECT' | 'GROUP'
     name?: string
     imageUrl?: string
     isOnline?: boolean
@@ -61,6 +64,10 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
   const [forwardSource, setForwardSource] = useState<Message | null>(null)
   const [allConversations, setAllConversations] = useState<any[]>([])
   const [conversationSearch, setConversationSearch] = useState('')
+  const [isVideoOpen, setIsVideoOpen] = useState(false)
+  const [isAudioOpen, setIsAudioOpen] = useState(false)
+  const [isShareOpen, setIsShareOpen] = useState(false)
+  const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false)
 
   useEffect(() => {
     if (user?.id) {
@@ -138,31 +145,51 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
     if (!conversation.id) return
     setIsLoadingMessages(true)
     setMessages([])
-    fetch(`/api/conversations/${conversation.id}/messages`)
+    
+    // Determine the correct API endpoint based on conversation type
+    const endpoint = conversation.type === 'GROUP' 
+      ? `/api/groups/${conversation.id}/messages`
+      : `/api/conversations/${conversation.id}/messages`
+    
+    fetch(endpoint)
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(data => setMessages(data.messages || []))
       .catch(console.error)
       .finally(() => setIsLoadingMessages(false))
-  }, [conversation.id])
+  }, [conversation.id, conversation.type])
 
   useEffect(() => {
     if (!socket || !conversation.id) return
     const convId = conversation.id
-    socket.emit('join-conversation', convId)
+    
+    // Join the appropriate room based on conversation type
+    if (conversation.type === 'GROUP') {
+      socket.emit('group:join', convId)
+    } else {
+      socket.emit('join-conversation', convId)
+    }
+    
     socket.on('message:new', handleNewMessage)
     socket.on('typing:start', handleTypingStart)
     socket.on('typing:stop', handleTypingStop)
     socket.on('reaction:update', ({ messageId, reactions }: { messageId: string; reactions: any[] }) => {
       setMessages(prev => prev.map(m => (m.id === messageId ? { ...m, reactions } as any : m)))
     })
+    
     return () => {
       socket.off('message:new', handleNewMessage)
       socket.off('typing:start', handleTypingStart)
       socket.off('typing:stop', handleTypingStop)
       socket.off('reaction:update')
-      socket.emit('leave-conversation', convId)
+      
+      // Leave the appropriate room
+      if (conversation.type === 'GROUP') {
+        socket.emit('group:leave', convId)
+      } else {
+        socket.emit('leave-conversation', convId)
+      }
     }
-  }, [socket, conversation.id, handleNewMessage, handleTypingStart, handleTypingStop])
+  }, [socket, conversation.id, conversation.type, handleNewMessage, handleTypingStart, handleTypingStop])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -229,14 +256,20 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
       <div className="bg-card border-b border-border px-4 py-3 flex items-center space-x-3 flex-shrink-0 glass-card">
         <div 
           className="flex items-center space-x-3 flex-1 cursor-pointer rounded-lg p-2 transition-colors duration-200 clickable"
-          onClick={handleProfileClick}
+          onClick={conversation.type === 'GROUP' ? () => setIsGroupInfoOpen(true) : handleProfileClick}
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
-          <img
-            src={conversation.imageUrl || '/default-avatar.png'}
-            alt={conversation.name}
-            className="w-10 h-10 rounded-full object-cover avatar-hover"
-          />
+          {conversation.type === 'GROUP' ? (
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+          ) : (
+            <img
+              src={conversation.imageUrl || '/default-avatar.png'}
+              alt={conversation.name}
+              className="w-10 h-10 rounded-full object-cover avatar-hover"
+            />
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-2">
               <h3 className={`font-semibold truncate ${theme === 'dark' ? 'text-white' : 'text-foreground'}`}>{conversation.name}</h3>
@@ -289,7 +322,7 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0"
-            onClick={() => console.log('Video call clicked')}
+            onClick={() => setIsVideoOpen(true)}
             title="Video Call"
           >
             <Video className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
@@ -299,7 +332,7 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0"
-            onClick={() => console.log('Audio call clicked')}
+            onClick={() => setIsAudioOpen(true)}
             title="Audio Call"
           >
             <Phone className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
@@ -309,7 +342,7 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0"
-            onClick={() => console.log('Screen share clicked')}
+            onClick={() => setIsShareOpen(true)}
             title="Screen Share"
           >
             <Monitor className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : ''}`} />
@@ -350,6 +383,7 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
       <div className="flex-shrink-0">
         <MessageInputLocal
           conversationId={conversation.id}
+          conversationType={conversation.type}
           socket={socket}
           onTyping={handleTyping}
           onOptimisticMessage={addOptimisticMessage}
@@ -359,6 +393,11 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
           onClearExternalReply={() => setReplyContext(null)}
         />
       </div>
+
+      {/* WebRTC Modals */}
+      <CallModal isOpen={isVideoOpen} onClose={() => setIsVideoOpen(false)} roomId={conversation.id} />
+      <CallModal isOpen={isAudioOpen} onClose={() => setIsAudioOpen(false)} roomId={conversation.id} audioOnly />
+      <CallModal isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} roomId={conversation.id} autoStartShare />
 
       {conversation.otherUserId && (
         <UserProfileDrawer
@@ -370,6 +409,19 @@ export function ChatWindow({ conversation, socket, isConnected, onMessageSent }:
           onStartChat={handleStartChat}
           onStartCall={handleStartCall}
           onStartVideoCall={handleStartVideoCall}
+        />
+      )}
+
+      {conversation.type === 'GROUP' && (
+        <GroupInfoDrawer
+          isOpen={isGroupInfoOpen}
+          onClose={() => setIsGroupInfoOpen(false)}
+          group={{
+            id: conversation.id,
+            name: conversation.name || 'Untitled Group',
+            imageUrl: conversation.imageUrl,
+            participants: []
+          }}
         />
       )}
 

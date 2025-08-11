@@ -11,6 +11,7 @@ import { UserProfile } from '@/components/chat/UserProfile'
 
 interface Conversation {
   id: string
+  type?: 'DIRECT' | 'GROUP'
   name: string
   imageUrl?: string
   lastMessage?: {
@@ -58,24 +59,47 @@ function ChatAppContent() {
     
     setIsLoadingConversations(true)
     try {
-      const response = await fetch('/api/conversations')
-      if (response.ok) {
-        const data = await response.json()
-        const newConversations = data.conversations || []
-        setConversations(newConversations)
-        
-        if (!selectedConversation && newConversations.length > 0) {
-          setSelectedConversation(newConversations[0])
-        }
-        
-        setHasLoadedInitial(true)
+      // Load both direct conversations and groups
+      const [conversationsResponse, groupsResponse] = await Promise.all([
+        fetch('/api/conversations'),
+        fetch('/api/groups')
+      ])
+      
+      const allConversations: Conversation[] = []
+      
+      if (conversationsResponse.ok) {
+        const conversationsData = await conversationsResponse.json()
+        const directConversations = conversationsData.conversations || []
+        allConversations.push(...directConversations)
       }
+      
+      if (groupsResponse.ok) {
+        const groupsData = await groupsResponse.json()
+        const groups = groupsData.groups || []
+        allConversations.push(...groups)
+      }
+      
+      // Sort by last message timestamp (most recent first)
+      allConversations.sort((a, b) => {
+        if (!a.lastMessage?.timestamp && !b.lastMessage?.timestamp) return 0
+        if (!a.lastMessage?.timestamp) return 1
+        if (!b.lastMessage?.timestamp) return -1
+        return new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
+      })
+      
+      setConversations(allConversations)
+      
+      if (!selectedConversation && allConversations.length > 0) {
+        setSelectedConversation(allConversations[0])
+      }
+      
+      setHasLoadedInitial(true)
     } catch (error) {
       console.error('Failed to load conversations:', error)
     } finally {
       setIsLoadingConversations(false)
     }
-  }, [isLoadingConversations])
+  }, [isLoadingConversations, selectedConversation])
 
   const handleMessageSent = useCallback((message: any) => {
   }, [])
@@ -167,7 +191,7 @@ function ChatAppContent() {
       return
     }
     
-    let conversation = conversations.find(c => c.id === id) || null
+    const conversation = conversations.find(c => c.id === id) || null
     
     if (!conversation) {
       fetch(`/api/conversations/${id}`)

@@ -3,9 +3,11 @@
 import { useUser } from '@clerk/nextjs'
 import { useTheme } from '@/contexts/ThemeContext'
 import { format } from 'date-fns'
+import { Users } from 'lucide-react'
 
 interface Conversation {
   id: string
+  type?: 'DIRECT' | 'GROUP'
   name: string
   imageUrl?: string
   lastMessage?: {
@@ -118,9 +120,10 @@ export function ConversationList({
     }`}>
       {filteredConversations.map((conv) => {
         const isSelected = selectedConversation === conv.id
+        const isGroup = conv.type === 'GROUP'
         const otherParticipant = conv.participants?.find(p => p.id !== user?.id)
-        const displayName = conv.name || otherParticipant?.name || 'Untitled Conversation'
-        const displayImage = conv.imageUrl || otherParticipant?.imageUrl
+        const displayName = conv.name || (isGroup ? 'Untitled Group' : otherParticipant?.name || 'Untitled Conversation')
+        const displayImage = conv.imageUrl || (isGroup ? undefined : otherParticipant?.imageUrl)
 
         return (
           <div
@@ -154,15 +157,25 @@ export function ConversationList({
               )}
             <div className="flex items-center space-x-3 relative z-10 py-2">
               <div className="relative flex-shrink-0">
-                <img
-                  src={displayImage || '/default-avatar.svg'}
-                  alt={displayName}
-                  className={`w-12 h-12 rounded-full object-cover transition-all duration-300 ${
+                {isGroup ? (
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
                     isSelected 
-                      ? 'avatar-hover shadow-lg shadow-blue-500/30 ring-2 ring-blue-500/50' 
-                      : 'hover:scale-105 hover:shadow-md'
-                  }`}
-                />
+                      ? 'avatar-hover shadow-lg shadow-blue-500/30 ring-2 ring-blue-500/50 bg-gradient-to-br from-purple-500 to-blue-600' 
+                      : 'hover:scale-105 hover:shadow-md bg-gradient-to-br from-purple-500 to-blue-600'
+                  }`}>
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                ) : (
+                  <img
+                    src={displayImage || '/default-avatar.svg'}
+                    alt={displayName}
+                    className={`w-12 h-12 rounded-full object-cover transition-all duration-300 ${
+                      isSelected 
+                        ? 'avatar-hover shadow-lg shadow-blue-500/30 ring-2 ring-blue-500/50' 
+                        : 'hover:scale-105 hover:shadow-md'
+                    }`}
+                  />
+                )}
                 {conv.isOnline && (
                   <div className={`absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 rounded-full transition-all duration-300 ${
                     isSelected 

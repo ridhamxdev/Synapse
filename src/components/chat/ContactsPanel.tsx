@@ -18,6 +18,7 @@ import {
   MessageCircle,
   MoreVertical
 } from 'lucide-react'
+import { CreateGroupModal } from './CreateGroupModal'
 
 interface ContactsPanelProps {
   onSelectConversation: (conversation: any) => void
@@ -40,6 +41,7 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
   const [users, setUsers] = useState<User[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showCreateGroup, setShowCreateGroup] = useState(false)
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -137,6 +139,11 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
     }
   }
 
+  const handleGroupCreated = (group: any) => {
+    // Navigate to the newly created group
+    onSelectConversation(group)
+  }
+
   return (
     <div className={`flex flex-col h-full transition-colors duration-300 ${
       theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'
@@ -148,9 +155,14 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
           <h2 className={`text-xl font-semibold transition-colors duration-300 ${
             theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
           }`}>Contacts</h2>
-          <Button size="sm" variant="outline" className={`transition-colors duration-200 ${
-            theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' : 'border-slate-300 hover:bg-slate-100'
-          }`}>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => setShowCreateGroup(true)}
+            className={`transition-colors duration-200 ${
+              theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' : 'border-slate-300 hover:bg-slate-100'
+            }`}
+          >
             <Users className="h-4 w-4 mr-2" />
             New Group
           </Button>
@@ -279,6 +291,13 @@ export function ContactsPanel({ onSelectConversation }: ContactsPanelProps) {
           </div>
         )}
       </ScrollArea>
+
+      {/* Create Group Modal */}
+      <CreateGroupModal
+        isOpen={showCreateGroup}
+        onClose={() => setShowCreateGroup(false)}
+        onGroupCreated={handleGroupCreated}
+      />
     </div>
   )
 }
